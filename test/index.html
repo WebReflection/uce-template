@@ -53,21 +53,28 @@
           useCallback, useMemo, useReducer, useEffect, useLayoutEffect
     -->
     <script>
-    const reactive = require('reactive-props')({useState});
+
+    var reactive = require('reactive-props')({useState});
+
     module.exports = {
-      setup() {
-        const state = reactive({
+      // performed once, receives the current DOM element
+      setup: function (element) {
+        var state = reactive({
           count: 0,
         });
-  
+
         function inc() {
           state.count++
         }
-  
+
         function dec() {
           state.count--
         }
-  
+
+        element.callback = function () {
+          console.log('connected');
+        };
+
         return {
           state,
           inc,
@@ -78,7 +85,7 @@
     </script>
 
     <!--
-      TODO: optional style
+      optional style (one or more styles)
         * global by default (no scoped, no shadow)
         * if scoped, prefixes styles with the component name
         * if shadow, it's injected on top of the ShadowDOM
@@ -100,6 +107,13 @@
       border-radius: 10px;
       background-color: seagreen;
       color: white;
+    }
+    </style>
+
+    <!-- global style example -->
+    <style>
+    body {
+      font-family: sans-serif;
     }
     </style>
   </template>

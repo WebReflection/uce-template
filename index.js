@@ -1617,72 +1617,88 @@
     return value !== this[i];
   }
 
-  customElements.whenDefined('uce-require').then(function (uce) {
-    var modules = uce || customElements.get('uce-require');
-    customElements.whenDefined('uce-lib').then(function (uce) {
-      var _ref = uce || customElements.get('uce-lib'),
-          define = _ref.define,
-          html = _ref.html,
-          svg = _ref.svg;
+  customElements.whenDefined('uce-lib').then(function (uce) {
+    var _ref = uce || customElements.get('uce-lib'),
+        define = _ref.define,
+        html = _ref.html,
+        svg = _ref.svg;
 
+    customElements.whenDefined('uce-require').then(function (uce) {
+      var modules = uce || customElements.get('uce-require');
       define('uce-template', {
         "extends": 'template',
         init: function init() {
           var _ref2 = this.content || createContent(this.innerHTML),
               children = _ref2.children;
 
+          var styles = [];
           var script = null;
-          var is = '';
+          var as = '';
           var name = '';
           var shadow = '';
-          var style = '';
-          var template = [];
+          var css = '';
+          var template = '';
           modules.load.then(function (require) {
             for (var i = 0; i < children.length; i++) {
               var child = children[i];
-              var nodeName = child.nodeName;
-
-              if (/-/i.test(nodeName)) {
-                name = nodeName.toLowerCase();
-                template = partial(child.innerHTML);
-                if (child.hasAttribute('is')) is = child.getAttribute('is').toLowerCase();
+              var tagName = child.tagName;
+              var is = child.hasAttribute('is');
+              if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
+                if (name) throw new Error('too many components');
+                name = tagName.toLowerCase();
+                template = child.innerHTML;
+                if (is) as = child.getAttribute('is').toLowerCase();
                 if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
-              } else if (/script/i.test(nodeName)) {
+              } else if (/^script$/i.test(tagName)) {
+                if (script) throw new Error('a component should have one script');
                 var exports = {};
                 var module = {
                   exports: exports
                 };
                 Function('require', 'module', 'exports', 'html', 'svg', 'useState', 'useRef', 'useContext', 'createContext', 'useCallback', 'useMemo', 'useReducer', 'useEffect', 'useLayoutEffect', child.textContent)(require, module, exports, html, svg, useState, useRef, useContext, createContext, useCallback, useMemo, useReducer, useEffect, useLayoutEffect);
                 script = module.exports;
-              } else if (/style/i.test(nodeName)) style = child.textContent;
+              }
             }
 
-            var callbacks = new WeakMap();
+            var selector = as ? name + '[is="' + as + '"]' : name;
+
+            for (var _i = styles.length; _i--;) {
+              var _child = styles[_i];
+              var textContent = _child.textContent;
+              if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
+                (function () {
+                  var def = [];
+                  css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
+                    return '\x01' + def.push($1) + ',';
+                  }).split(',').map(function (s) {
+                    return s.trim() ? selector + ' ' + s.trim() : '';
+                  }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
+                    return '{' + def[--$1] + '}';
+                  }).replace(/(,\n)+/g, ',\n');
+                })();
+              } else css += textContent;
+            }
+
+            var params = partial(template);
             var _script = script,
                 observedAttributes = _script.observedAttributes;
-            define(is || name, {
+            define(as || name, {
               observedAttributes: observedAttributes,
-              "extends": is ? name : 'element',
+              style: css ? function () {
+                return css;
+              } : null,
+              "extends": as ? name : 'element',
               attachShadow: shadow ? {
                 mode: shadow
               } : void 0,
               attributeChanged: observedAttributes && function () {
-                var _callbacks$get = callbacks.get(this),
-                    attributeChanged = _callbacks$get.attributeChanged;
-
-                if (attributeChanged) attributeChanged.apply(this, arguments);
+                if (this.hasOwnProperty('attributeChanged')) this.attributeChanged();
               },
               connected: function connected() {
-                var _callbacks$get2 = callbacks.get(this),
-                    connected = _callbacks$get2.connected;
-
-                if (connected) connected.apply(this, arguments);
+                if (this.hasOwnProperty('connected')) this.connected();
               },
               disconnected: function disconnected() {
-                var _callbacks$get3 = callbacks.get(this),
-                    disconnected = _callbacks$get3.disconnected;
-
-                if (disconnected) disconnected.apply(this, arguments);
+                if (this.hasOwnProperty('disconnected')) this.connected();
               },
               init: function init() {
                 var self = this;
@@ -1694,11 +1710,10 @@
                   augmentor(function () {
                     if (init) {
                       init = false;
-                      callbacks.set(self, script.callbacks || {});
-                      data = script.setup();
+                      data = script.setup(self);
                     }
 
-                    html.apply(null, template(data));
+                    html.apply(null, params(data));
                   })();
                 }
               }
