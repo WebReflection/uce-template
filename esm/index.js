@@ -60,7 +60,7 @@ customElements.whenDefined('uce-lib').then(uce => {
                   'useContext', 'createContext',
                   'useCallback', 'useMemo', 'useReducer',
                   'useEffect', 'useLayoutEffect',
-                  child.textContent
+                  '"use strict";\n' + child.textContent
                 )(
                   require, module, exports,
                   html, svg,

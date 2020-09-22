@@ -1695,7 +1695,7 @@
                   var module = {
                     exports: exports
                   };
-                  Function('require', 'module', 'exports', 'html', 'svg', 'useState', 'useRef', 'useContext', 'createContext', 'useCallback', 'useMemo', 'useReducer', 'useEffect', 'useLayoutEffect', child.textContent)(require, module, exports, html, svg, useState, useRef, useContext, createContext, useCallback, useMemo, useReducer, useEffect, useLayoutEffect);
+                  Function('require', 'module', 'exports', 'html', 'svg', 'useState', 'useRef', 'useContext', 'createContext', 'useCallback', 'useMemo', 'useReducer', 'useEffect', 'useLayoutEffect', '"use strict";\n' + child.textContent)(require, module, exports, html, svg, useState, useRef, useContext, createContext, useCallback, useMemo, useReducer, useEffect, useLayoutEffect);
                   script = module.exports;
                 }
               }
