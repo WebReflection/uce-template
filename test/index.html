@@ -7,10 +7,10 @@
   <title>WIP: uce-template</title>
 
   <!-- Custom Elements polyfill compatible with builtin extends -->
-  <script defer src="https://unpkg.com/@ungap/custom-elements"></script>
+  <script src="https://unpkg.com/@ungap/custom-elements"></script>
 
   <!-- the bundled module -->
-  <script defer src="../min.js"></script>
+  <script defer src="../index.js"></script>
 
   <!-- dependencies graph to `resolve(...)` -->
   <script type="json" is="uce-require">
@@ -35,11 +35,11 @@
         * no shadow means no ShadowDOM needed/used
     -->
     <my-counter>
-      <button onclick=${dec}>
+      <button onclick={{dec}}>
         -
       </button>
-      <span>${state.count}</span>
-      <button onclick=${inc}>
+      <span>{{state.count}}</span>
+      <button onclick={{inc}}>
         +
       </button>
     </my-counter>
@@ -52,9 +52,9 @@
         * useState, useRef, useContext, createContext,
           useCallback, useMemo, useReducer, useEffect, useLayoutEffect
     -->
-    <script>
+    <script type="module">
 
-    var reactive = require('reactive-props')({useState});
+    var reactive = require('reactive-props')({useState: useState});
 
     module.exports = {
       // performed once, receives the current DOM element
@@ -76,9 +76,9 @@
         };
 
         return {
-          state,
-          inc,
-          dec
+          state: state,
+          inc: inc,
+          dec: dec
         };
       }
     };

@@ -1218,6 +1218,40 @@
     return render(this, html.apply(null, arguments));
   }
 
+  var Promise$1 = typeof Promise === 'function' ? Promise : function (fn) {
+    var queue = [],
+        resolved = 0,
+        value;
+    fn(function ($) {
+      value = $;
+      resolved = 1;
+      queue.splice(0).forEach(then);
+    });
+    return {
+      then: then
+    };
+
+    function then(fn) {
+      return resolved ? setTimeout(fn, 0, value) : queue.push(fn), this;
+    }
+  };
+
+  if (!Promise$1.all) Promise$1.all = function (list) {
+    return new Promise$1(function ($) {
+      var length = list.length;
+      var i = 0;
+
+      while (i < length) {
+        list[i++].then(update);
+      }
+
+      i = 0;
+
+      function update() {
+        if (++i === length) $();
+      }
+    });
+  };
   customElements.whenDefined('uce-lib').then(function (uce) {
     var _ref = uce || customElements.get('uce-lib'),
         define = _ref.define;
@@ -1233,7 +1267,7 @@
     };
 
     var load = function load(module, path) {
-      return new Promise(function ($) {
+      return new Promise$1(function ($) {
         var xhr = new XMLHttpRequest();
         xhr.open('get', path, true);
         xhr.send(null);
@@ -1255,8 +1289,10 @@
         keys(graph).forEach(function (key) {
           if (!(key in cache)) all.push(load(key, graph[key]));
         });
-        this.constructor.load = Promise.all(all).then(function () {
-          return resolve;
+        this.constructor.load = new Promise$1(function ($) {
+          Promise$1.all(all).then(function () {
+            return $(resolve);
+          });
         });
       }
     });
@@ -1629,7 +1665,7 @@
         "extends": 'template',
         init: function init() {
           var _ref2 = this.content || createContent(this.innerHTML),
-              children = _ref2.children;
+              childNodes = _ref2.childNodes;
 
           var styles = [];
           var script = null;
@@ -1639,24 +1675,29 @@
           var css = '';
           var template = '';
           modules.load.then(function (require) {
-            for (var i = 0; i < children.length; i++) {
-              var child = children[i];
-              var tagName = child.tagName;
-              var is = child.hasAttribute('is');
-              if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
-                if (name) throw new Error('too many components');
-                name = tagName.toLowerCase();
-                template = child.innerHTML;
-                if (is) as = child.getAttribute('is').toLowerCase();
-                if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
-              } else if (/^script$/i.test(tagName)) {
-                if (script) throw new Error('a component should have one script');
-                var exports = {};
-                var module = {
-                  exports: exports
-                };
-                Function('require', 'module', 'exports', 'html', 'svg', 'useState', 'useRef', 'useContext', 'createContext', 'useCallback', 'useMemo', 'useReducer', 'useEffect', 'useLayoutEffect', child.textContent)(require, module, exports, html, svg, useState, useRef, useContext, createContext, useCallback, useMemo, useReducer, useEffect, useLayoutEffect);
-                script = module.exports;
+            for (var i = 0; i < childNodes.length; i++) {
+              var child = childNodes[i];
+
+              if (child.nodeType === 1) {
+                var tagName = child.tagName;
+                var is = child.hasAttribute('is');
+                if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
+                  if (name) throw new Error('too many components');
+                  name = tagName.toLowerCase();
+                  template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
+                    return '${' + $1 + '}';
+                  });
+                  if (is) as = child.getAttribute('is').toLowerCase();
+                  if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
+                } else if (/^script$/i.test(tagName)) {
+                  if (script) throw new Error('a component should have one script');
+                  var exports = {};
+                  var module = {
+                    exports: exports
+                  };
+                  Function('require', 'module', 'exports', 'html', 'svg', 'useState', 'useRef', 'useContext', 'createContext', 'useCallback', 'useMemo', 'useReducer', 'useEffect', 'useLayoutEffect', child.textContent)(require, module, exports, html, svg, useState, useRef, useContext, createContext, useCallback, useMemo, useReducer, useEffect, useLayoutEffect);
+                  script = module.exports;
+                }
               }
             }
 

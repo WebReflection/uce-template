@@ -25,7 +25,7 @@ customElements.whenDefined('uce-lib').then(uce => {
     define('uce-template', {
       extends: 'template',
       init() {
-        const {children} = this.content || createContent(this.innerHTML);
+        const {childNodes} = this.content || createContent(this.innerHTML);
         const styles = [];
         let script = null;
         let as = '';
@@ -34,44 +34,49 @@ customElements.whenDefined('uce-lib').then(uce => {
         let css = '';
         let template = '';
         modules.load.then(require => {
-          for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            const {tagName} = child;
-            const is = child.hasAttribute('is');
-            if (/^style$/i.test(tagName))
-              styles.push(child);
-            else if (is || /-/i.test(tagName)) {
-              if (name)
-                throw new Error('too many components');
-              name = tagName.toLowerCase();
-              template = child.innerHTML;
-              if (is)
-                as = child.getAttribute('is').toLowerCase();
-              if (child.hasAttribute('shadow'))
-                shadow = child.getAttribute('shadow') || 'open';
-            }
-            else if (/^script$/i.test(tagName)) {
-              if (script)
-                throw new Error('a component should have one script');
-              const exports = {};
-              const module = {exports};
-              Function(
-                'require', 'module', 'exports',
-                'html', 'svg',
-                'useState', 'useRef',
-                'useContext', 'createContext',
-                'useCallback', 'useMemo', 'useReducer',
-                'useEffect', 'useLayoutEffect',
-                child.textContent
-              )(
-                require, module, exports,
-                html, svg,
-                useState, useRef,
-                useContext, createContext,
-                useCallback, useMemo, useReducer,
-                useEffect, useLayoutEffect
-              );
-              script = module.exports;
+          for (let i = 0; i < childNodes.length; i++) {
+            const child = childNodes[i];
+            if (child.nodeType === 1) {
+              const {tagName} = child;
+              const is = child.hasAttribute('is');
+              if (/^style$/i.test(tagName))
+                styles.push(child);
+              else if (is || /-/i.test(tagName)) {
+                if (name)
+                  throw new Error('too many components');
+                name = tagName.toLowerCase();
+                template = child.innerHTML.replace(
+                            /\{\{([^\2]+?)(\}\})/g,
+                            (_, $1) => '${' + $1 + '}'
+                          );
+                if (is)
+                  as = child.getAttribute('is').toLowerCase();
+                if (child.hasAttribute('shadow'))
+                  shadow = child.getAttribute('shadow') || 'open';
+              }
+              else if (/^script$/i.test(tagName)) {
+                if (script)
+                  throw new Error('a component should have one script');
+                const exports = {};
+                const module = {exports};
+                Function(
+                  'require', 'module', 'exports',
+                  'html', 'svg',
+                  'useState', 'useRef',
+                  'useContext', 'createContext',
+                  'useCallback', 'useMemo', 'useReducer',
+                  'useEffect', 'useLayoutEffect',
+                  child.textContent
+                )(
+                  require, module, exports,
+                  html, svg,
+                  useState, useRef,
+                  useContext, createContext,
+                  useCallback, useMemo, useReducer,
+                  useEffect, useLayoutEffect
+                );
+                script = module.exports;
+              }
             }
           }
           const selector = as ? (name + '[is="' + as + '"]') : name;
