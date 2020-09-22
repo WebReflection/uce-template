@@ -3,16 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>uce-template</title>
+
+  <title>WIP: uce-template</title>
+
+  <!-- Custom Elements polyfill compatible with builtin extends -->
   <script defer src="https://unpkg.com/@ungap/custom-elements"></script>
-  <script defer src="../index.js"></script>
+
+  <!-- the bundled module -->
+  <script defer src="../min.js"></script>
+
+  <!-- dependencies graph to `resolve(...)` -->
   <script type="json" is="uce-require">
   {
     "reactive-props": "js/reactive-props.js"
   }
   </script>
+
+  <style>
+  /* you know, legacy browsers */
+  template { display: none; }
+  </style>
 </head>
 <body>
+  <!-- an SSR compatible way to define components -->
   <template is="uce-template">
 
     <!--
@@ -65,7 +78,10 @@
     </script>
 
     <!--
-      optional style 
+      TODO: optional style
+        * global by default (no scoped, no shadow)
+        * if scoped, prefixes styles with the component name
+        * if shadow, it's injected on top of the ShadowDOM
     -->
     <style scoped>
     span,
@@ -87,8 +103,11 @@
     }
     </style>
   </template>
+
+  <!-- the defined components in the wild -->
   <my-counter></my-counter>
   <hr>
   <my-counter></my-counter>
+
 </body>
 </html>
