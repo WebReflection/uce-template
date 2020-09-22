@@ -3,25 +3,27 @@ require('uce');
 require('uce-require');
 
 const createContent = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('@ungap/create-content'));
+const stateHandler = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('reactive-props'));
 const {partial} = require('tag-params');
 
-const {
+const {augmentor, useState} = require('augmentor');
+
+/*
+import {
   augmentor,
-  useState,
-  useRef,
-  useContext,
-  createContext,
-  useCallback,
-  useMemo,
-  useReducer,
-  useEffect,
-  useLayoutEffect
-} = require('augmentor');
+  useState, useRef,
+  useContext, createContext,
+  useCallback, useMemo, useReducer,
+  useEffect, useLayoutEffect
+} from 'augmentor';
+*/
 
 customElements.whenDefined('uce-lib').then(uce => {
-  const {define, html, svg} = uce || customElements.get('uce-lib');
+  const {define, render, html, svg} = uce || customElements.get('uce-lib');
   customElements.whenDefined('uce-require').then(uce => {
     const modules = uce || customElements.get('uce-require');
+    const reactive = stateHandler({useState});
+    const domHandler = stateHandler({dom: true, useState});
     define('uce-template', {
       extends: 'template',
       init() {
@@ -61,19 +63,21 @@ customElements.whenDefined('uce-lib').then(uce => {
                 const module = {exports};
                 Function(
                   'require', 'module', 'exports',
-                  'html', 'svg',
-                  'useState', 'useRef',
-                  'useContext', 'createContext',
-                  'useCallback', 'useMemo', 'useReducer',
-                  'useEffect', 'useLayoutEffect',
+                  'reactive', 'render', 'html', 'svg',
                   '"use strict";\n' + child.textContent
+                    .replace(
+                      /^\s*export\s+default(\s+)/mg,
+                      'module.exports$1='
+                    )
+                    .replace(
+                      /(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)([^;\n]+)/g,
+                      (_, $1, $2, $3, $4) => (
+                        $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $4 + ')'
+                      )
+                    )
                 )(
                   require, module, exports,
-                  html, svg,
-                  useState, useRef,
-                  useContext, createContext,
-                  useCallback, useMemo, useReducer,
-                  useEffect, useLayoutEffect
+                  reactive, render, html, svg
                 );
                 script = module.exports;
               }
@@ -101,12 +105,13 @@ customElements.whenDefined('uce-lib').then(uce => {
               css += textContent;
           }
           const params = partial(template);
-          const {observedAttributes} = script;
+          const {observedAttributes, props} = script;
+          const data = new WeakMap;
           define(as || name, {
             observedAttributes,
             style: css ? () => css : null,
             extends: as ? name : 'element',
-            attachShadow: shadow ? {mode: shadow} : void 0,
+            attachShadow: shadow ? {mode: shadow} : null,
             attributeChanged: observedAttributes && function () {
               if (this.hasOwnProperty('attributeChanged'))
                 this.attributeChanged();
@@ -122,17 +127,17 @@ customElements.whenDefined('uce-lib').then(uce => {
             init() {
               const self = this;
               const {html} = self;
-              if (script) {
-                let init = true;
-                let data = null;
-                augmentor(() => {
-                  if (init) {
-                    init = false;
-                    data = script.setup(self);
-                  }
-                  html.apply(null, params(data));
-                })();
-              }
+              let init = true;
+              let context = null;
+              (this.render = augmentor(() => {
+                if (init) {
+                  init = false;
+                  if (props)
+                    domHandler(self, props);
+                  context = script.setup(self);
+                }
+                html.apply(null, params(context));
+              }))();
             }
           });
         });

@@ -7,7 +7,7 @@
   <title>WIP: uce-template</title>
 
   <!-- Custom Elements polyfill compatible with builtin extends -->
-  <script defer src="js/ce.js"></script>
+  <script defer src="https://unpkg.com/@ungap/custom-elements"></script>
 
   <!-- the bundled module -->
   <script defer src="../index.js"></script>
@@ -15,7 +15,7 @@
   <!-- dependencies graph to `resolve(...)` -->
   <script type="json" is="uce-require">
   {
-    "reactive-props": "js/reactive-props.js"
+    "bundle": "js/bundle.js"
   }
   </script>
 
@@ -38,7 +38,7 @@
       <button onclick={{dec}}>
         -
       </button>
-      <span>{{state.count}}</span>
+      <span>{{state.count}} {{element.text}}</span>
       <button onclick={{inc}}>
         +
       </button>
@@ -46,17 +46,15 @@
 
     <!--
       optional script with pre-defined helpers:
-        * require(module) must be part of uce-require graph
-        * module and exports to export CommonJS style
-        * html and svg utilities from uhtml
-        * useState, useRef, useContext, createContext,
-          useCallback, useMemo, useReducer, useEffect, useLayoutEffect
+        * reactive(state) helper from reactive-props/state
+        * render(...), html`...`, and svg`...` utilities from uce/uhtml
     -->
     <script type="module">
 
-    var reactive = require('reactive-props')({useState: useState});
+    import test from "bundle";
+    console.log(test);
 
-    module.exports = {
+    export default {
       // performed once, receives the current DOM element
       setup: function (element) {
         var state = reactive({
@@ -76,11 +74,13 @@
         };
 
         return {
+          element: element,
           state: state,
           inc: inc,
           dec: dec
         };
-      }
+      },
+      props: {text: ''}
     };
     </script>
 

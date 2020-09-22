@@ -1298,6 +1298,93 @@
     });
   });
 
+  var defineProperties$2 = Object.defineProperties,
+      keys$1 = Object.keys;
+
+  var accessor = function accessor(all, shallow, hook, value, update) {
+    return {
+      configurable: true,
+      get: function get() {
+        return value;
+      },
+      set: function set(_) {
+        if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
+          value = _;
+          if (hook) update(value);else update();
+        }
+      }
+    };
+  };
+
+  var loop = function loop(props, get, all, shallow, useState, update) {
+    var desc = {};
+    var hook = useState !== noop;
+    var args = [all, shallow, hook];
+
+    for (var ke = keys$1(props), y = 0; y < ke.length; y++) {
+      var value = get(props, ke[y]);
+      var extras = hook ? useState(value) : [value, useState];
+      if (update) extras[1] = update;
+      desc[ke[y]] = accessor.apply(null, args.concat(extras));
+    }
+
+    return desc;
+  };
+  var noop = function noop() {};
+
+  var dom = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop : _ref$useState,
+        _ref$getAttribute = _ref.getAttribute,
+        getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
+      return element.getAttribute(key);
+    } : _ref$getAttribute;
+
+    return function (element, props, update) {
+      var value = function value(props, key) {
+        var result = props[key];
+
+        if (element.hasOwnProperty(key)) {
+          result = element[key];
+          delete element[key];
+        } else if (element.hasAttribute(key)) result = getAttribute(element, key);
+
+        return result;
+      };
+
+      var desc = loop(props, value, all, shallow, useState, update);
+      return defineProperties$2(element, desc);
+    };
+  });
+
+  var value = function value(props, key) {
+    return props[key];
+  };
+
+  var state = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop : _ref$useState;
+
+    return function (props, update) {
+      return defineProperties$2({}, loop(props, value, all, shallow, useState, update));
+    };
+  });
+
+  var stateHandler = (function () {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    return (options.dom ? dom : state)(options);
+  });
+
   /**
    * @typedef {object} ParseResult an object with parsed results
    * @property {string[]} template - the list of chunks around interpolations
@@ -1320,7 +1407,7 @@
   * The default `transform` callback
   * @param {string} value the interpolation value as string
   */
-  var noop = function noop(value) {
+  var noop$1 = function noop(value) {
     return value;
   };
   /**
@@ -1340,7 +1427,7 @@
    */
 
   var parse = function parse(content, transform) {
-    var fn = transform || noop;
+    var fn = transform || noop$1;
     var template = [];
     var values = [];
     var length = content.length;
@@ -1434,14 +1521,14 @@
   }
 
   /*! (c) Andrea Giammarchi - ISC */
-  var state = null; // main exports
+  var state$1 = null; // main exports
 
   var augmentor = function augmentor(fn) {
     var stack = [];
     return function hook() {
-      var prev = state;
+      var prev = state$1;
       var after = [];
-      state = {
+      state$1 = {
         hook: hook,
         args: arguments,
         stack: stack,
@@ -1453,7 +1540,7 @@
       try {
         return fn.apply(null, arguments);
       } finally {
-        state = prev;
+        state$1 = prev;
 
         for (var i = 0, length = after.length; i < length; i++) {
           after[i]();
@@ -1478,13 +1565,13 @@
   };
 
   var useReducer = function useReducer(reducer, value, init, options) {
-    var i = state.i++;
-    var _state = state,
+    var i = state$1.i++;
+    var _state = state$1,
         hook = _state.hook,
         args = _state.args,
         stack = _state.stack,
         length = _state.length;
-    if (i === length) state.length = stack.push({});
+    if (i === length) state$1.length = stack.push({});
     var ref = stack[i];
     ref.args = args;
 
@@ -1516,151 +1603,36 @@
     return useReducer(getValue, value, void 0, options);
   }; // useContext
 
-  var hooks = new WeakMap();
-
-  var invoke = function invoke(_ref2) {
-    var hook = _ref2.hook,
-        args = _ref2.args;
-    hook.apply(null, args);
-  };
-
-  var createContext = function createContext(value) {
-    var context = {
-      value: value,
-      provide: provide
-    };
-    hooks.set(context, []);
-    return context;
-  };
-  var useContext = function useContext(context) {
-    var _state2 = state,
-        hook = _state2.hook,
-        args = _state2.args;
-    var stack = hooks.get(context);
-    var info = {
-      hook: hook,
-      args: args
-    };
-    if (!stack.some(update, info)) stack.push(info);
-    return context.value;
-  };
-
-  function provide(value) {
-    if (this.value !== value) {
-      this.value = value;
-      hooks.get(this).forEach(invoke);
-    }
-  }
-
-  function update(_ref3) {
-    var hook = _ref3.hook;
-    return hook === this.hook;
-  } // dropEffect, hasEffect, useEffect, useLayoutEffect
-
 
   var effects = new WeakMap();
-  var fx = umap(effects);
-
-  var stop = function stop() {};
-
-  var createEffect = function createEffect(asy) {
-    return function (effect, guards) {
-      var i = state.i++;
-      var _state3 = state,
-          hook = _state3.hook,
-          after = _state3.after,
-          stack = _state3.stack,
-          length = _state3.length;
-
-      if (i < length) {
-        var info = stack[i];
-        var _update = info.update,
-            values = info.values,
-            _stop = info.stop;
-
-        if (!guards || guards.some(different, values)) {
-          info.values = guards;
-          if (asy) _stop(asy);
-          var clean = info.clean;
-
-          if (clean) {
-            info.clean = null;
-            clean();
-          }
-
-          var _invoke = function _invoke() {
-            info.clean = effect();
-          };
-
-          if (asy) _update(_invoke);else after.push(_invoke);
-        }
-      } else {
-        var _update2 = asy ? reraf() : stop;
-
-        var _info = {
-          clean: null,
-          update: _update2,
-          values: guards,
-          stop: stop
-        };
-        state.length = stack.push(_info);
-        (fx.get(hook) || fx.set(hook, [])).push(_info);
-
-        var _invoke2 = function _invoke2() {
-          _info.clean = effect();
-        };
-
-        if (asy) _info.stop = _update2(_invoke2);else after.push(_invoke2);
-      }
-    };
-  };
   var hasEffect = effects.has.bind(effects);
-  var useEffect = createEffect(true);
-  var useLayoutEffect = createEffect(false); // useMemo, useCallback
 
-  var useMemo = function useMemo(memo, guards) {
-    var i = state.i++;
-    var _state4 = state,
-        stack = _state4.stack,
-        length = _state4.length;
-    if (i === length) state.length = stack.push({
-      $: memo(),
-      _: guards
-    });else if (!guards || guards.some(different, stack[i]._)) stack[i] = {
-      $: memo(),
-      _: guards
-    };
-    return stack[i].$;
-  };
-  var useCallback = function useCallback(fn, guards) {
-    return useMemo(function () {
-      return fn;
-    }, guards);
-  }; // useRef
-
-  var useRef = function useRef(value) {
-    var i = state.i++;
-    var _state5 = state,
-        stack = _state5.stack,
-        length = _state5.length;
-    if (i === length) state.length = stack.push({
-      current: value
-    });
-    return stack[i];
-  };
-
-  function different(value, i) {
-    return value !== this[i];
-  }
+  /*
+  import {
+    augmentor,
+    useState, useRef,
+    useContext, createContext,
+    useCallback, useMemo, useReducer,
+    useEffect, useLayoutEffect
+  } from 'augmentor';
+  */
 
   customElements.whenDefined('uce-lib').then(function (uce) {
     var _ref = uce || customElements.get('uce-lib'),
         define = _ref.define,
+        render = _ref.render,
         html = _ref.html,
         svg = _ref.svg;
 
     customElements.whenDefined('uce-require').then(function (uce) {
       var modules = uce || customElements.get('uce-require');
+      var reactive = stateHandler({
+        useState: useState
+      });
+      var domHandler = stateHandler({
+        dom: true,
+        useState: useState
+      });
       define('uce-template', {
         "extends": 'template',
         init: function init() {
@@ -1695,7 +1667,9 @@
                   var module = {
                     exports: exports
                   };
-                  Function('require', 'module', 'exports', 'html', 'svg', 'useState', 'useRef', 'useContext', 'createContext', 'useCallback', 'useMemo', 'useReducer', 'useEffect', 'useLayoutEffect', '"use strict";\n' + child.textContent)(require, module, exports, html, svg, useState, useRef, useContext, createContext, useCallback, useMemo, useReducer, useEffect, useLayoutEffect);
+                  Function('require', 'module', 'exports', 'reactive', 'render', 'html', 'svg', '"use strict";\n' + child.textContent.replace(/^\s*export\s+default(\s+)/mg, 'module.exports$1=').replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)([^;\n]+)/g, function (_, $1, $2, $3, $4) {
+                    return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $4 + ')';
+                  }))(require, module, exports, reactive, render, html, svg);
                   script = module.exports;
                 }
               }
@@ -1722,7 +1696,8 @@
 
             var params = partial(template);
             var _script = script,
-                observedAttributes = _script.observedAttributes;
+                observedAttributes = _script.observedAttributes,
+                props = _script.props;
             define(as || name, {
               observedAttributes: observedAttributes,
               style: css ? function () {
@@ -1731,7 +1706,7 @@
               "extends": as ? name : 'element',
               attachShadow: shadow ? {
                 mode: shadow
-              } : void 0,
+              } : null,
               attributeChanged: observedAttributes && function () {
                 if (this.hasOwnProperty('attributeChanged')) this.attributeChanged();
               },
@@ -1744,19 +1719,17 @@
               init: function init() {
                 var self = this;
                 var html = self.html;
+                var init = true;
+                var context = null;
+                (this.render = augmentor(function () {
+                  if (init) {
+                    init = false;
+                    if (props) domHandler(self, props);
+                    context = script.setup(self);
+                  }
 
-                if (script) {
-                  var init = true;
-                  var data = null;
-                  augmentor(function () {
-                    if (init) {
-                      init = false;
-                      data = script.setup(self);
-                    }
-
-                    html.apply(null, params(data));
-                  })();
-                }
+                  html.apply(null, params(context));
+                }))();
               }
             });
           });
