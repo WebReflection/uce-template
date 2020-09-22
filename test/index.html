@@ -60,18 +60,18 @@
       // performed once, receives the current DOM element
       setup: function (element) {
         var state = reactive({
-          count: 0,
+          count: 0
         });
 
         function inc() {
-          state.count++
+          state.count++;
         }
 
         function dec() {
-          state.count--
+          state.count--;
         }
 
-        element.callback = function () {
+        element.connected = function () {
           console.log('connected');
         };
 
