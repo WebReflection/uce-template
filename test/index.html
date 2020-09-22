@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>uce-template</title>
+  <script defer src="https://unpkg.com/@ungap/custom-elements"></script>
+  <script defer src="../index.js"></script>
+  <script type="json" is="uce-require">
+  {
+    "reactive-props": "js/reactive-props.js"
+  }
+  </script>
+</head>
+<body>
+  <template is="uce-template">
+
+    <!--
+      component template with optional shadow attribute:
+        * <my-comp shadow> or <my-comp shadow="open"> creates open ShadowDOM
+        * <my-comp shadow="closed"> creates closed ShadowDOM
+        * no shadow means no ShadowDOM needed/used
+    -->
+    <my-counter>
+      <button onclick=${dec}>
+        -
+      </button>
+      <span>${state.count}</span>
+      <button onclick=${inc}>
+        +
+      </button>
+    </my-counter>
+
+    <!--
+      optional script with pre-defined helpers:
+        * require(module) must be part of uce-require graph
+        * module and exports to export CommonJS style
+        * html and svg utilities from uhtml
+        * useState, useRef, useContext, createContext,
+          useCallback, useMemo, useReducer, useEffect, useLayoutEffect
+    -->
+    <script>
+    const reactive = require('reactive-props')({useState});
+    module.exports = {
+      setup() {
+        const state = reactive({
+          count: 0,
+        });
+  
+        function inc() {
+          state.count++
+        }
+  
+        function dec() {
+          state.count--
+        }
+  
+        return {
+          state,
+          inc,
+          dec
+        };
+      }
+    };
+    </script>
+
+    <!--
+      optional style 
+    -->
+    <style scoped>
+    span,
+    button {
+      font-size: 200%;
+    }
+    span {
+      width: 4rem;
+      display: inline-block;
+      text-align: center;
+    }
+    button {
+      width: 4rem;
+      height: 4rem;
+      border: none;
+      border-radius: 10px;
+      background-color: seagreen;
+      color: white;
+    }
+    </style>
+  </template>
+  <my-counter></my-counter>
+  <hr>
+  <my-counter></my-counter>
+</body>
+</html>
