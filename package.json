@@ -1,6 +1,6 @@
 {
   "name": "uce-template",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "WIP - a Vue 3 inspired concept based on Custom Elements",
   "main": "./cjs/index.js",
   "scripts": {
