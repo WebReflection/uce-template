@@ -1,4 +1,4 @@
-(function () {
+self.uceTemplate = (function (exports) {
   'use strict';
 
   /*! (c) Andrea Giammarchi @webreflection ISC */
@@ -2551,5 +2551,13 @@
       } else later();
     }
   });
+  var resolve = function resolve(name, module) {
+    if (name in cache$2) throw new Error('duplicated ' + name);
+    cache$2[name] = module;
+  };
 
-}());
+  exports.resolve = resolve;
+
+  return exports;
+
+}({}));

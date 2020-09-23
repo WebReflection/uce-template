@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+<meta charset=UTF-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>WIP: uce-template</title>
+<script defer=defer src=../min.js>
+</script>
+<style>body{font-family:sans-serif;user-select:none}</style>
+</head>
+<body>
+<template is=uce-template>
+<my-counter>
+<button onclick={{dec}}>
+-
+</button>
+<span>{{state.count}}</span>
+<button onclick={{inc}}>
++
+</button>
+</my-counter>
+<script type=module>
+import reactive from"@uce/reactive";
+export default{setup:function(e){var t=reactive({count:0});return e.connected=function(){console.log("connected")},{element:e,state:t,inc:function(){t.count++},dec:function(){t.count--}}}};
+</script>
+<style scoped>button,span{font-size:200%}span{width:4rem;display:inline-block;text-align:center}button{width:4rem;height:4rem;border:0;border-radius:10px;background-color:#2e8b57;color:#fff}</style>
+</template>
+<main>
+<my-counter></my-counter>
+<hr>
+<my-counter></my-counter>
+</main>
+</body>
+</html>

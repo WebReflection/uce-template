@@ -177,3 +177,10 @@ define('uce-template', {
       later();
   }
 });
+
+const resolve = (name, module) => {
+  if (name in cache)
+    throw new Error('duplicated ' + name);
+  cache[name] = module;
+};
+exports.resolve = resolve;
