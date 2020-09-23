@@ -24,6 +24,7 @@ customElements.whenDefined('uce-require').then(uce => {
   const modules = uce || customElements.get('uce-require');
   const reactive = stateHandler({useState});
   const domHandler = stateHandler({dom: true, useState});
+  const module = cjs({reactive, render, html, svg});
   define('uce-template', {
     extends: 'template',
     init() {
@@ -59,20 +60,7 @@ customElements.whenDefined('uce-require').then(uce => {
             else if (/^script$/i.test(tagName)) {
               if (script)
                 throw new Error('bad template');
-
-              const module = cjs({reactive, render, html, svg});
-              script = module(child.textContent
-                .replace(
-                  /^\s*export\s+default(\s+)/mg,
-                  'module.exports$1='
-                )
-                .replace(
-                  /(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)([^;\n]+)/g,
-                  (_, $1, $2, $3, $4) => (
-                    $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $4 + ')'
-                  )
-                )
-              );
+              script = module(child.textContent);
             }
           }
         }

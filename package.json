@@ -20,11 +20,11 @@
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-node-resolve": "^9.0.0",
     "ascjs": "^4.0.1",
-    "reactive-props": "^0.1.9",
+    "reactive-props": "^0.1.10",
     "rollup": "^2.28.1",
     "rollup-plugin-terser": "^7.0.2",
     "terser": "^5.3.2",
-    "uce": "^1.11.1"
+    "uce": "^1.11.2"
   },
   "module": "./esm/index.js",
   "type": "module",
@@ -40,6 +40,6 @@
     "@ungap/create-content": "^0.2.0",
     "augmentor": "^2.2.0",
     "tag-params": "^1.0.6",
-    "uce-require": "0.0.8"
+    "uce-require": "0.0.10"
   }
 }

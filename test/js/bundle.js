@@ -1,1 +1,1 @@
-module.exports = 'Bundle loaded OK';
+export default 'Bundle loaded OK';

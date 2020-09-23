@@ -325,7 +325,7 @@
       set: function set(_) {
         if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
           value = _;
-          if (hook) update(value);else update();
+          if (hook) update.call(this, value);else update.call(this);
         }
       }
     };
@@ -347,7 +347,7 @@
   };
   var noop = function noop() {};
 
-  var dom = (function () {
+  var domHandler = (function () {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
         _ref$all = _ref.all,
         all = _ref$all === void 0 ? false : _ref$all,
@@ -397,7 +397,7 @@
 
   var stateHandler = (function () {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    return (options.dom ? dom : state$1)(options);
+    return (options.dom ? domHandler : state$1)(options);
   });
 
   /**
@@ -1261,6 +1261,9 @@
     return s;
   }
 
+  var reactive = domHandler({
+    dom: true
+  });
   var CE = customElements;
   var defineCustomElement = CE.define;
   var create$1 = Object.create,
@@ -1297,13 +1300,12 @@
         render = definition.render,
         style = definition.style;
     var initialized = new WeakMap();
-    var defaultProps = new Map();
     var statics = {};
     var proto = {};
     var listeners = [];
     var retype = create$1(null);
 
-    var bootstrap = function bootstrap(element) {
+    var bootstrap = function bootstrap(element, key, value) {
       if (!initialized.has(element)) {
         initialized.set(element, 0);
         defineProperties$2(element, {
@@ -1319,23 +1321,10 @@
           element.addEventListener(type, element, options);
         }
 
-        defaultProps.forEach(function (key, _) {
-          var value = props[key]; // covered via test/pen.html, hard to test in NodeJS
-
-          /* istanbul ignore if */
-
-          if (element.hasOwnProperty(key)) {
-            value = element[key];
-            delete element[key];
-          } else if (element.hasAttribute(key)) {
-            value = element.getAttribute(key);
-            element.removeAttribute(key);
-          }
-
-          _.set(element, value);
-        });
         if (bound) bound.forEach(bind, element);
+        if (props) reactive(element, props, render);
         if (init || render) (init || render).call(element);
+        if (key) element[key] = value;
       }
     };
 
@@ -1383,21 +1372,14 @@
     if (props !== null) {
       if (props) {
         var _loop = function _loop(_k, _i) {
-          var _ = new WeakMap();
-
           var key = _k[_i];
-          defaultProps.set(_, key);
           proto[key] = {
             get: function get() {
               bootstrap(this);
-              return _.get(this);
+              return props[key];
             },
             set: function set(value) {
-              bootstrap(this);
-
-              _.set(this, value);
-
-              if (render) render.call(this);
+              bootstrap(this, key, value);
             }
           };
         };
@@ -1552,7 +1534,7 @@
       keys$2 = Object.keys;
   var cache$2 = create$2(null);
 
-  var require = function require(module) {
+  var $require = function $require(module) {
     return cache$2[module];
   };
 
@@ -1563,17 +1545,36 @@
     var args = keys$2(extras || {});
     var values = args.map(function (k) {
       return extras[k];
-    });
+    }).concat($require);
+    args.push('require');
     return function (code) {
       var exports = {};
       var module = {
         exports: exports
       };
-      var params = args.concat('require', 'module', 'exports', strict + code);
+      var params = args.concat('module', 'exports', strict + asCJS(code));
       var fn = Function.apply(null, params);
-      fn.apply(null, values.concat(require, module, exports));
-      return module.exports;
+      fn.apply(null, values.concat(module, exports));
+      var result = module.exports;
+      var k = keys$2(result);
+      return k.length === 1 && k[0] === 'default' ? result["default"] : result;
     };
+  };
+  var asCJS = function asCJS(esm) {
+    var exports = [];
+    return esm.replace(/(^|[\r\n])\s*import\s+((['|"])[^\3]+?\3)/g, function (_, $1, $2) {
+      return $1 + 'require(' + $2 + ')';
+    }).replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
+      return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $3 + ')';
+    }).replace(/^\s*export\s+default(\s*)/mg, 'exports.default =$1').replace(/(^|[\r\n])\s*export\s+\{([^}]+?)\}[^\n]*/g, function (_, $, $1) {
+      $1.trim().split(/\s*,\s*/).forEach(function (name) {
+        exports.push("exports.".concat(name, " = ").concat(name, ";"));
+      });
+      return $;
+    }).replace(/(^|[\r\n])\s*export\s+(const|let|var|function)(\s+)(\w+)/g, function (_, $, $1, $2, $3) {
+      exports.push("exports.".concat($3, " = ").concat($3, ";"));
+      return $ + $1 + $2 + $3;
+    }).concat('\n', exports.join('\n'));
   };
   CE$1.whenDefined(lib).then(function (uce) {
     var all = [];
@@ -1636,6 +1637,12 @@
       dom: true,
       useState: useState
     });
+    var module = cjs({
+      reactive: reactive,
+      render: render,
+      html: html,
+      svg: svg
+    });
     define('uce-template', {
       "extends": 'template',
       init: function init() {
@@ -1666,15 +1673,7 @@
                 if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
               } else if (/^script$/i.test(tagName)) {
                 if (script) throw new Error('bad template');
-                var module = cjs({
-                  reactive: reactive,
-                  render: render,
-                  html: html,
-                  svg: svg
-                });
-                script = module(child.textContent.replace(/^\s*export\s+default(\s+)/mg, 'module.exports$1=').replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)([^;\n]+)/g, function (_, $1, $2, $3, $4) {
-                  return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $4 + ')';
-                }));
+                script = module(child.textContent);
               }
             }
           }
