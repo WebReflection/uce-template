@@ -1,6 +1,201 @@
 (function () {
   'use strict';
 
+  var compat = typeof cancelAnimationFrame === 'function';
+  var cAF = compat ? cancelAnimationFrame : clearTimeout;
+  var rAF = compat ? requestAnimationFrame : setTimeout;
+  function reraf(limit) {
+    var force, timer, callback, self, args;
+    reset();
+    return function reschedule(_callback, _self, _args) {
+      callback = _callback;
+      self = _self;
+      args = _args;
+      if (!timer) timer = rAF(invoke);
+      if (--force < 0) stop(true);
+      return stop;
+    };
+
+    function invoke() {
+      reset();
+      callback.apply(self, args || []);
+    }
+
+    function reset() {
+      force = limit || Infinity;
+      timer = compat ? 0 : null;
+    }
+
+    function stop(flush) {
+      var didStop = !!timer;
+
+      if (didStop) {
+        cAF(timer);
+        if (flush) invoke();
+      }
+
+      return didStop;
+    }
+  }
+
+  var umap = (function (_) {
+    return {
+      // About: get: _.get.bind(_)
+      // It looks like WebKit/Safari didn't optimize bind at all,
+      // so that using bind slows it down by 60%.
+      // Firefox and Chrome are just fine in both cases,
+      // so let's use the approach that works fast everywhere 👍
+      get: function get(key) {
+        return _.get(key);
+      },
+      set: function set(key, value) {
+        return _.set(key, value), value;
+      }
+    };
+  });
+
+  /*! (c) Andrea Giammarchi - ISC */
+  var state = null; // main exports
+
+  var augmentor = function augmentor(fn) {
+    var stack = [];
+    return function hook() {
+      var prev = state;
+      var after = [];
+      state = {
+        hook: hook,
+        args: arguments,
+        stack: stack,
+        i: 0,
+        length: stack.length,
+        after: after
+      };
+
+      try {
+        return fn.apply(null, arguments);
+      } finally {
+        state = prev;
+
+        for (var i = 0, length = after.length; i < length; i++) {
+          after[i]();
+        }
+      }
+    };
+  };
+
+  var updates = umap(new WeakMap());
+
+  var hookdate = function hookdate(hook, ctx, args) {
+    hook.apply(ctx, args);
+  };
+
+  var defaults = {
+    async: false,
+    always: false
+  };
+
+  var getValue = function getValue(value, f) {
+    return typeof f == 'function' ? f(value) : f;
+  };
+
+  var useReducer = function useReducer(reducer, value, init, options) {
+    var i = state.i++;
+    var _state = state,
+        hook = _state.hook,
+        args = _state.args,
+        stack = _state.stack,
+        length = _state.length;
+    if (i === length) state.length = stack.push({});
+    var ref = stack[i];
+    ref.args = args;
+
+    if (i === length) {
+      var fn = typeof init === 'function';
+
+      var _ref = (fn ? options : init) || options || defaults,
+          asy = _ref.async,
+          always = _ref.always;
+
+      ref.$ = fn ? init(value) : getValue(void 0, value);
+      ref._ = asy ? updates.get(hook) || updates.set(hook, reraf()) : hookdate;
+
+      ref.f = function (value) {
+        var $value = reducer(ref.$, value);
+
+        if (always || ref.$ !== $value) {
+          ref.$ = $value;
+
+          ref._(hook, null, ref.args);
+        }
+      };
+    }
+
+    return [ref.$, ref.f];
+  }; // useState
+
+  var useState = function useState(value, options) {
+    return useReducer(getValue, value, void 0, options);
+  }; // useContext
+
+
+  var effects = new WeakMap();
+  var hasEffect = effects.has.bind(effects);
+
+  /*! (c) Andrea Giammarchi - ISC */
+  var createContent = function (document) {
+
+    var FRAGMENT = 'fragment';
+    var TEMPLATE = 'template';
+    var HAS_CONTENT = ('content' in create(TEMPLATE));
+    var createHTML = HAS_CONTENT ? function (html) {
+      var template = create(TEMPLATE);
+      template.innerHTML = html;
+      return template.content;
+    } : function (html) {
+      var content = create(FRAGMENT);
+      var template = create(TEMPLATE);
+      var childNodes = null;
+
+      if (/^[^\S]*?<(col(?:group)?|t(?:head|body|foot|r|d|h))/i.test(html)) {
+        var selector = RegExp.$1;
+        template.innerHTML = '<table>' + html + '</table>';
+        childNodes = template.querySelectorAll(selector);
+      } else {
+        template.innerHTML = html;
+        childNodes = template.childNodes;
+      }
+
+      append(content, childNodes);
+      return content;
+    };
+    return function createContent(markup, type) {
+      return (type === 'svg' ? createSVG : createHTML)(markup);
+    };
+
+    function append(root, childNodes) {
+      var length = childNodes.length;
+
+      while (length--) {
+        root.appendChild(childNodes[0]);
+      }
+    }
+
+    function create(element) {
+      return element === FRAGMENT ? document.createDocumentFragment() : document.createElementNS('http://www.w3.org/1999/xhtml', element);
+    } // it could use createElementNS when hasNode is there
+    // but this fallback is equally fast and easier to maintain
+    // it is also battle tested already in all IE
+
+
+    function createSVG(svg) {
+      var content = create(FRAGMENT);
+      var template = create('div');
+      template.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>';
+      append(content, template.firstChild.childNodes);
+      return content;
+    }
+  }(document);
+
   function _typeof(obj) {
     "@babel/helpers - typeof";
 
@@ -118,21 +313,190 @@
     };
   }
 
-  var umap = (function (_) {
+  var defineProperties = Object.defineProperties,
+      keys = Object.keys;
+
+  var accessor = function accessor(all, shallow, hook, value, update) {
     return {
-      // About: get: _.get.bind(_)
-      // It looks like WebKit/Safari didn't optimize bind at all,
-      // so that using bind slows it down by 60%.
-      // Firefox and Chrome are just fine in both cases,
-      // so let's use the approach that works fast everywhere 👍
-      get: function get(key) {
-        return _.get(key);
+      configurable: true,
+      get: function get() {
+        return value;
       },
-      set: function set(key, value) {
-        return _.set(key, value), value;
+      set: function set(_) {
+        if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
+          value = _;
+          if (hook) update(value);else update();
+        }
       }
     };
+  };
+
+  var loop = function loop(props, get, all, shallow, useState, update) {
+    var desc = {};
+    var hook = useState !== noop;
+    var args = [all, shallow, hook];
+
+    for (var ke = keys(props), y = 0; y < ke.length; y++) {
+      var value = get(props, ke[y]);
+      var extras = hook ? useState(value) : [value, useState];
+      if (update) extras[1] = update;
+      desc[ke[y]] = accessor.apply(null, args.concat(extras));
+    }
+
+    return desc;
+  };
+  var noop = function noop() {};
+
+  var dom = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop : _ref$useState,
+        _ref$getAttribute = _ref.getAttribute,
+        getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
+      return element.getAttribute(key);
+    } : _ref$getAttribute;
+
+    return function (element, props, update) {
+      var value = function value(props, key) {
+        var result = props[key];
+
+        if (element.hasOwnProperty(key)) {
+          result = element[key];
+          delete element[key];
+        } else if (element.hasAttribute(key)) result = getAttribute(element, key);
+
+        return result;
+      };
+
+      var desc = loop(props, value, all, shallow, useState, update);
+      return defineProperties(element, desc);
+    };
   });
+
+  var value = function value(props, key) {
+    return props[key];
+  };
+
+  var state$1 = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop : _ref$useState;
+
+    return function (props, update) {
+      return defineProperties({}, loop(props, value, all, shallow, useState, update));
+    };
+  });
+
+  var stateHandler = (function () {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    return (options.dom ? dom : state$1)(options);
+  });
+
+  /**
+   * @typedef {object} ParseResult an object with parsed results
+   * @property {string[]} template - the list of chunks around interpolations
+   * @property {string[]} values - interpolations as strings
+   */
+
+  /**
+   * @typedef {[string[], ...any[]]} TagArguments an array to use as template
+   *                                              literals tag arguments
+   */
+
+  /**
+   * @callback Partial a callback that re-evaluate each time new data associated
+   *                   to the same template-like array.
+   * @param {object} [object] the optional data to evaluate as interpolated values
+   * @returns {TagArguments} an array to use as template literals tag arguments
+   */
+
+  /**
+  * The default `transform` callback
+  * @param {string} value the interpolation value as string
+  */
+  var noop$1 = function noop(value) {
+    return value;
+  };
+  /**
+   * The default "null" fallback when no object is passed to the Partial.
+   */
+
+
+  var fallback = Object.create(null);
+  /**
+   * Given a string and an optional function used to transform each value
+   * found as interpolated content, returns an object with a `template` and
+   * a `values` properties, as arrays, containing the template chunks,
+   * and all its interpolations as strings.
+   * @param {string} content the string to parse/convert as template chunks
+   * @param {function} [transform] the optional function to modify string values
+   * @returns {ParseResult} an object with `template` and `values` arrays.
+   */
+
+  var parse = function parse(content, transform) {
+    var fn = transform || noop$1;
+    var template = [];
+    var values = [];
+    var length = content.length;
+    var i = 0;
+
+    while (i <= length) {
+      var open = content.indexOf('${', i);
+
+      if (-1 < open) {
+        template.push(content.slice(i, open));
+        open = i = open + 2;
+        var close = 1; // TODO: this *might* break if the interpolation has strings
+        //       containing random `{}` chars ... but implementing
+        //       a whole JS parser here doesn't seem worth it
+        //       for such irrelevant edge-case ... or does it?
+
+        while (0 < close && i < length) {
+          var c = content[i++];
+          close += c === '{' ? 1 : c === '}' ? -1 : 0;
+        }
+
+        values.push(fn(content.slice(open, i - 1)));
+      } else {
+        template.push(content.slice(i));
+        i = length + 1;
+      }
+    }
+
+    return {
+      template: template,
+      values: values
+    };
+  };
+  /**
+   * Given a string and an optional function used to transform each value
+   * found as interpolated content, returns a callback that can be used to
+   * repeatedly generate new content from the same template array.
+   * @param {string} content the string to parse/convert as template chunks
+   * @param {function} [transform] the optional function to modify string values
+   * @returns {Partial} a function that accepts an optional object to generate
+   *                    new content, through the same template, each time.
+   */
+
+  var partial = function partial(content, transform) {
+    var _parse = parse(content, transform),
+        template = _parse.template,
+        values = _parse.values;
+
+    var args = [template];
+    var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
+    return function (object) {
+      return args.concat(rest(object || fallback));
+    };
+  };
 
   var attr = /([^\s\\>"'=]+)\s*=\s*(['"]?)$/;
   var empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
@@ -436,61 +800,6 @@
       }
     };
   };
-
-  /*! (c) Andrea Giammarchi - ISC */
-  var createContent = function (document) {
-
-    var FRAGMENT = 'fragment';
-    var TEMPLATE = 'template';
-    var HAS_CONTENT = ('content' in create(TEMPLATE));
-    var createHTML = HAS_CONTENT ? function (html) {
-      var template = create(TEMPLATE);
-      template.innerHTML = html;
-      return template.content;
-    } : function (html) {
-      var content = create(FRAGMENT);
-      var template = create(TEMPLATE);
-      var childNodes = null;
-
-      if (/^[^\S]*?<(col(?:group)?|t(?:head|body|foot|r|d|h))/i.test(html)) {
-        var selector = RegExp.$1;
-        template.innerHTML = '<table>' + html + '</table>';
-        childNodes = template.querySelectorAll(selector);
-      } else {
-        template.innerHTML = html;
-        childNodes = template.childNodes;
-      }
-
-      append(content, childNodes);
-      return content;
-    };
-    return function createContent(markup, type) {
-      return (type === 'svg' ? createSVG : createHTML)(markup);
-    };
-
-    function append(root, childNodes) {
-      var length = childNodes.length;
-
-      while (length--) {
-        root.appendChild(childNodes[0]);
-      }
-    }
-
-    function create(element) {
-      return element === FRAGMENT ? document.createDocumentFragment() : document.createElementNS('http://www.w3.org/1999/xhtml', element);
-    } // it could use createElementNS when hasNode is there
-    // but this fallback is equally fast and easier to maintain
-    // it is also battle tested already in all IE
-
-
-    function createSVG(svg) {
-      var content = create(FRAGMENT);
-      var template = create('div');
-      template.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>';
-      append(content, template.firstChild.childNodes);
-      return content;
-    }
-  }(document);
 
   var reducePath = function reducePath(_ref, i) {
     var childNodes = _ref.childNodes;
@@ -856,7 +1165,7 @@
   }
 
   var create = Object.create,
-      defineProperties = Object.defineProperties; // both `html` and `svg` template literal tags are polluted
+      defineProperties$1 = Object.defineProperties; // both `html` and `svg` template literal tags are polluted
   // with a `for(ref[, id])` and a `node` tag too
 
   var tag = function tag(type) {
@@ -878,7 +1187,7 @@
       };
     };
 
-    return defineProperties( // non keyed operations are recognized as instance of Hole
+    return defineProperties$1( // non keyed operations are recognized as instance of Hole
     // during the "unroll", recursively resolved and updated
     function (template) {
       for (var _len2 = arguments.length, values = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
@@ -955,9 +1264,9 @@
   var CE = customElements;
   var defineCustomElement = CE.define;
   var create$1 = Object.create,
-      defineProperties$1 = Object.defineProperties,
+      defineProperties$2 = Object.defineProperties,
       getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
-      keys = Object.keys;
+      keys$1 = Object.keys;
   var element = 'element';
   var constructors = umap(new Map([[element, {
     c: HTMLElement,
@@ -997,7 +1306,7 @@
     var bootstrap = function bootstrap(element) {
       if (!initialized.has(element)) {
         initialized.set(element, 0);
-        defineProperties$1(element, {
+        defineProperties$2(element, {
           html: {
             value: content.bind(attachShadow ? element.attachShadow(attachShadow) : element)
           }
@@ -1030,7 +1339,7 @@
       }
     };
 
-    for (var k = keys(definition), i = 0, _length = k.length; i < _length; i++) {
+    for (var k = keys$1(definition), i = 0, _length = k.length; i < _length; i++) {
       var key = k[i];
 
       if (/^on./.test(key) && !/Options$/.test(key)) {
@@ -1093,7 +1402,7 @@
           };
         };
 
-        for (var _k = keys(props), _i = 0; _i < _k.length; _i++) {
+        for (var _k = keys$1(props), _i = 0; _i < _k.length; _i++) {
           _loop(_k, _i);
         }
       } else {
@@ -1150,8 +1459,8 @@
 
       return MicroElement;
     }(c);
-    defineProperties$1(MicroElement, statics);
-    defineProperties$1(MicroElement.prototype, proto);
+    defineProperties$2(MicroElement, statics);
+    defineProperties$2(MicroElement.prototype, proto);
     var args = [tagName, MicroElement];
     if (e !== element) args.push({
       "extends": e
@@ -1236,35 +1545,39 @@
     }
   };
 
-  if (!Promise$1.all) Promise$1.all = function (list) {
-    return new Promise$1(function ($) {
-      var length = list.length;
-      var i = 0;
+  var CE$1 = customElements;
+  var parse$1 = JSON.parse;
+  var create$2 = Object.create,
+      defineProperty = Object.defineProperty,
+      keys$2 = Object.keys;
+  var cache$2 = create$2(null);
 
-      while (i < length) {
-        list[i++].then(update);
-      }
-
-      i = 0;
-
-      function update() {
-        if (++i === length) $();
-      }
-    });
+  var require = function require(module) {
+    return cache$2[module];
   };
-  customElements.whenDefined('uce-lib').then(function (uce) {
-    var _ref = uce || customElements.get('uce-lib'),
-        define = _ref.define;
 
-    var parse = JSON.parse;
-    var create = Object.create,
-        keys = Object.keys;
-    var cache = create(null);
-    var all = [];
-
-    var resolve = function resolve(module) {
-      return cache[module];
+  var lib = 'uce-lib';
+  var req = 'uce-require';
+  var strict = '"use strict;"\n';
+  var cjs = function cjs(extras) {
+    var args = keys$2(extras || {});
+    var values = args.map(function (k) {
+      return extras[k];
+    });
+    return function (code) {
+      var exports = {};
+      var module = {
+        exports: exports
+      };
+      var params = args.concat('require', 'module', 'exports', strict + code);
+      var fn = Function.apply(null, params);
+      fn.apply(null, values.concat(require, module, exports));
+      return module.exports;
     };
+  };
+  CE$1.whenDefined(lib).then(function (uce) {
+    var all = [];
+    var loader = cjs();
 
     var load = function load(module, path) {
       return new Promise$1(function ($) {
@@ -1273,468 +1586,158 @@
         xhr.send(null);
 
         xhr.onload = function () {
-          var self = {};
-          var script = xhr.responseText.replace(/^\s*var\s+/mg, 'self.');
-          Function('self', 'window', 'global', 'globalThis', script)(self, self, self, self);
-          var key = keys(self);
-          if (key.length === 1) $(cache[module] = self[key[0]]["default"] || self[key[0]]);else $(cache[module] = self);
+          $(cache$2[module] = loader(xhr.responseText));
         };
       });
     };
 
-    if (!customElements.get('uce-require')) define('uce-require', {
-      "extends": 'script',
-      init: function init() {
-        var graph = parse(this.textContent.trim());
-        keys(graph).forEach(function (key) {
-          if (!(key in cache)) all.push(load(key, graph[key]));
-        });
-        this.constructor.load = new Promise$1(function ($) {
-          Promise$1.all(all).then(function () {
-            return $(resolve);
-          });
-        });
-      }
-    });
-  });
+    if (!Promise$1.all) Promise$1.all = function (list) {
+      return new Promise$1(function ($) {
+        var length = list.length;
+        if (!length) $();
+        var i = 0;
 
-  var defineProperties$2 = Object.defineProperties,
-      keys$1 = Object.keys;
-
-  var accessor = function accessor(all, shallow, hook, value, update) {
-    return {
-      configurable: true,
-      get: function get() {
-        return value;
-      },
-      set: function set(_) {
-        if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
-          value = _;
-          if (hook) update(value);else update();
-        }
-      }
-    };
-  };
-
-  var loop = function loop(props, get, all, shallow, useState, update) {
-    var desc = {};
-    var hook = useState !== noop;
-    var args = [all, shallow, hook];
-
-    for (var ke = keys$1(props), y = 0; y < ke.length; y++) {
-      var value = get(props, ke[y]);
-      var extras = hook ? useState(value) : [value, useState];
-      if (update) extras[1] = update;
-      desc[ke[y]] = accessor.apply(null, args.concat(extras));
-    }
-
-    return desc;
-  };
-  var noop = function noop() {};
-
-  var dom = (function () {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$all = _ref.all,
-        all = _ref$all === void 0 ? false : _ref$all,
-        _ref$shallow = _ref.shallow,
-        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
-        _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState,
-        _ref$getAttribute = _ref.getAttribute,
-        getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
-      return element.getAttribute(key);
-    } : _ref$getAttribute;
-
-    return function (element, props, update) {
-      var value = function value(props, key) {
-        var result = props[key];
-
-        if (element.hasOwnProperty(key)) {
-          result = element[key];
-          delete element[key];
-        } else if (element.hasAttribute(key)) result = getAttribute(element, key);
-
-        return result;
-      };
-
-      var desc = loop(props, value, all, shallow, useState, update);
-      return defineProperties$2(element, desc);
-    };
-  });
-
-  var value = function value(props, key) {
-    return props[key];
-  };
-
-  var state = (function () {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$all = _ref.all,
-        all = _ref$all === void 0 ? false : _ref$all,
-        _ref$shallow = _ref.shallow,
-        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
-        _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState;
-
-    return function (props, update) {
-      return defineProperties$2({}, loop(props, value, all, shallow, useState, update));
-    };
-  });
-
-  var stateHandler = (function () {
-    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    return (options.dom ? dom : state)(options);
-  });
-
-  /**
-   * @typedef {object} ParseResult an object with parsed results
-   * @property {string[]} template - the list of chunks around interpolations
-   * @property {string[]} values - interpolations as strings
-   */
-
-  /**
-   * @typedef {[string[], ...any[]]} TagArguments an array to use as template
-   *                                              literals tag arguments
-   */
-
-  /**
-   * @callback Partial a callback that re-evaluate each time new data associated
-   *                   to the same template-like array.
-   * @param {object} [object] the optional data to evaluate as interpolated values
-   * @returns {TagArguments} an array to use as template literals tag arguments
-   */
-
-  /**
-  * The default `transform` callback
-  * @param {string} value the interpolation value as string
-  */
-  var noop$1 = function noop(value) {
-    return value;
-  };
-  /**
-   * The default "null" fallback when no object is passed to the Partial.
-   */
-
-
-  var fallback = Object.create(null);
-  /**
-   * Given a string and an optional function used to transform each value
-   * found as interpolated content, returns an object with a `template` and
-   * a `values` properties, as arrays, containing the template chunks,
-   * and all its interpolations as strings.
-   * @param {string} content the string to parse/convert as template chunks
-   * @param {function} [transform] the optional function to modify string values
-   * @returns {ParseResult} an object with `template` and `values` arrays.
-   */
-
-  var parse = function parse(content, transform) {
-    var fn = transform || noop$1;
-    var template = [];
-    var values = [];
-    var length = content.length;
-    var i = 0;
-
-    while (i <= length) {
-      var open = content.indexOf('${', i);
-
-      if (-1 < open) {
-        template.push(content.slice(i, open));
-        open = i = open + 2;
-        var close = 1; // TODO: this *might* break if the interpolation has strings
-        //       containing random `{}` chars ... but implementing
-        //       a whole JS parser here doesn't seem worth it
-        //       for such irrelevant edge-case ... or does it?
-
-        while (0 < close && i < length) {
-          var c = content[i++];
-          close += c === '{' ? 1 : c === '}' ? -1 : 0;
+        while (i < length) {
+          list[i++].then(update);
         }
 
-        values.push(fn(content.slice(open, i - 1)));
-      } else {
-        template.push(content.slice(i));
-        i = length + 1;
-      }
-    }
+        i = 0;
 
-    return {
-      template: template,
-      values: values
-    };
-  };
-  /**
-   * Given a string and an optional function used to transform each value
-   * found as interpolated content, returns a callback that can be used to
-   * repeatedly generate new content from the same template array.
-   * @param {string} content the string to parse/convert as template chunks
-   * @param {function} [transform] the optional function to modify string values
-   * @returns {Partial} a function that accepts an optional object to generate
-   *                    new content, through the same template, each time.
-   */
-
-  var partial = function partial(content, transform) {
-    var _parse = parse(content, transform),
-        template = _parse.template,
-        values = _parse.values;
-
-    var args = [template];
-    var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
-    return function (object) {
-      return args.concat(rest(object || fallback));
-    };
-  };
-
-  var compat = typeof cancelAnimationFrame === 'function';
-  var cAF = compat ? cancelAnimationFrame : clearTimeout;
-  var rAF = compat ? requestAnimationFrame : setTimeout;
-  function reraf(limit) {
-    var force, timer, callback, self, args;
-    reset();
-    return function reschedule(_callback, _self, _args) {
-      callback = _callback;
-      self = _self;
-      args = _args;
-      if (!timer) timer = rAF(invoke);
-      if (--force < 0) stop(true);
-      return stop;
-    };
-
-    function invoke() {
-      reset();
-      callback.apply(self, args || []);
-    }
-
-    function reset() {
-      force = limit || Infinity;
-      timer = compat ? 0 : null;
-    }
-
-    function stop(flush) {
-      var didStop = !!timer;
-
-      if (didStop) {
-        cAF(timer);
-        if (flush) invoke();
-      }
-
-      return didStop;
-    }
-  }
-
-  /*! (c) Andrea Giammarchi - ISC */
-  var state$1 = null; // main exports
-
-  var augmentor = function augmentor(fn) {
-    var stack = [];
-    return function hook() {
-      var prev = state$1;
-      var after = [];
-      state$1 = {
-        hook: hook,
-        args: arguments,
-        stack: stack,
-        i: 0,
-        length: stack.length,
-        after: after
-      };
-
-      try {
-        return fn.apply(null, arguments);
-      } finally {
-        state$1 = prev;
-
-        for (var i = 0, length = after.length; i < length; i++) {
-          after[i]();
+        function update() {
+          if (++i === length) $();
         }
-      }
-    };
-  };
-
-  var updates = umap(new WeakMap());
-
-  var hookdate = function hookdate(hook, ctx, args) {
-    hook.apply(ctx, args);
-  };
-
-  var defaults = {
-    async: false,
-    always: false
-  };
-
-  var getValue = function getValue(value, f) {
-    return typeof f == 'function' ? f(value) : f;
-  };
-
-  var useReducer = function useReducer(reducer, value, init, options) {
-    var i = state$1.i++;
-    var _state = state$1,
-        hook = _state.hook,
-        args = _state.args,
-        stack = _state.stack,
-        length = _state.length;
-    if (i === length) state$1.length = stack.push({});
-    var ref = stack[i];
-    ref.args = args;
-
-    if (i === length) {
-      var fn = typeof init === 'function';
-
-      var _ref = (fn ? options : init) || options || defaults,
-          asy = _ref.async,
-          always = _ref.always;
-
-      ref.$ = fn ? init(value) : getValue(void 0, value);
-      ref._ = asy ? updates.get(hook) || updates.set(hook, reraf()) : hookdate;
-
-      ref.f = function (value) {
-        var $value = reducer(ref.$, value);
-
-        if (always || ref.$ !== $value) {
-          ref.$ = $value;
-
-          ref._(hook, null, ref.args);
-        }
-      };
-    }
-
-    return [ref.$, ref.f];
-  }; // useState
-
-  var useState = function useState(value, options) {
-    return useReducer(getValue, value, void 0, options);
-  }; // useContext
-
-
-  var effects = new WeakMap();
-  var hasEffect = effects.has.bind(effects);
-
-  /*
-  import {
-    augmentor,
-    useState, useRef,
-    useContext, createContext,
-    useCallback, useMemo, useReducer,
-    useEffect, useLayoutEffect
-  } from 'augmentor';
-  */
-
-  customElements.whenDefined('uce-lib').then(function (uce) {
-    var _ref = uce || customElements.get('uce-lib'),
-        define = _ref.define,
-        render = _ref.render,
-        html = _ref.html,
-        svg = _ref.svg;
-
-    customElements.whenDefined('uce-require').then(function (uce) {
-      var modules = uce || customElements.get('uce-require');
-      var reactive = stateHandler({
-        useState: useState
       });
-      var domHandler = stateHandler({
-        dom: true,
-        useState: useState
-      });
-      define('uce-template', {
-        "extends": 'template',
+    };
+
+    if (!CE$1.get(req)) {
+      (uce || CE$1.get(lib)).define(req, {
+        "extends": 'script',
         init: function init() {
-          var _ref2 = this.content || createContent(this.innerHTML),
-              childNodes = _ref2.childNodes;
-
-          var styles = [];
-          var script = null;
-          var as = '';
-          var name = '';
-          var shadow = '';
-          var css = '';
-          var template = '';
-          modules.load.then(function (require) {
-            for (var i = 0; i < childNodes.length; i++) {
-              var child = childNodes[i];
-
-              if (child.nodeType === 1) {
-                var tagName = child.tagName;
-                var is = child.hasAttribute('is');
-                if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
-                  if (name) throw new Error('too many components');
-                  name = tagName.toLowerCase();
-                  template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
-                    return '${' + $1 + '}';
-                  });
-                  if (is) as = child.getAttribute('is').toLowerCase();
-                  if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
-                } else if (/^script$/i.test(tagName)) {
-                  if (script) throw new Error('a component should have one script');
-                  var exports = {};
-                  var module = {
-                    exports: exports
-                  };
-                  Function('require', 'module', 'exports', 'reactive', 'render', 'html', 'svg', '"use strict";\n' + child.textContent.replace(/^\s*export\s+default(\s+)/mg, 'module.exports$1=').replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)([^;\n]+)/g, function (_, $1, $2, $3, $4) {
-                    return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $4 + ')';
-                  }))(require, module, exports, reactive, render, html, svg);
-                  script = module.exports;
-                }
-              }
-            }
-
-            var selector = as ? name + '[is="' + as + '"]' : name;
-
-            for (var _i = styles.length; _i--;) {
-              var _child = styles[_i];
-              var textContent = _child.textContent;
-              if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
-                (function () {
-                  var def = [];
-                  css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
-                    return '\x01' + def.push($1) + ',';
-                  }).split(',').map(function (s) {
-                    return s.trim() ? selector + ' ' + s.trim() : '';
-                  }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
-                    return '{' + def[--$1] + '}';
-                  }).replace(/(,\n)+/g, ',\n');
-                })();
-              } else css += textContent;
-            }
-
-            var params = partial(template);
-            var _script = script,
-                observedAttributes = _script.observedAttributes,
-                props = _script.props;
-            define(as || name, {
-              observedAttributes: observedAttributes,
-              style: css ? function () {
-                return css;
-              } : null,
-              "extends": as ? name : 'element',
-              attachShadow: shadow ? {
-                mode: shadow
-              } : null,
-              attributeChanged: observedAttributes && function () {
-                if (this.hasOwnProperty('attributeChanged')) this.attributeChanged();
-              },
-              connected: function connected() {
-                if (this.hasOwnProperty('connected')) this.connected();
-              },
-              disconnected: function disconnected() {
-                if (this.hasOwnProperty('disconnected')) this.connected();
-              },
-              init: function init() {
-                var self = this;
-                var html = self.html;
-                var init = true;
-                var context = null;
-                (this.render = augmentor(function () {
-                  if (init) {
-                    init = false;
-                    if (props) domHandler(self, props);
-                    context = script.setup(self);
-                  }
-
-                  html.apply(null, params(context));
-                }))();
-              }
-            });
+          var graph = parse$1(this.textContent.trim());
+          keys$2(graph).forEach(function (key) {
+            if (!(key in cache$2)) all.push(load(key, graph[key]));
           });
         }
       });
+      defineProperty(CE$1.get(req), 'load', {
+        get: function get() {
+          return Promise$1.all(all);
+        }
+      });
+    }
+  });
+
+  customElements.whenDefined('uce-require').then(function (uce) {
+    var modules = uce || customElements.get('uce-require');
+    var reactive = stateHandler({
+      useState: useState
+    });
+    var domHandler = stateHandler({
+      dom: true,
+      useState: useState
+    });
+    define('uce-template', {
+      "extends": 'template',
+      init: function init() {
+        var _ref = this.content || createContent(this.innerHTML),
+            childNodes = _ref.childNodes;
+
+        var styles = [];
+        var script = null;
+        var as = '';
+        var css = '';
+        var name = '';
+        var shadow = '';
+        var template = '';
+        modules.load.then(function () {
+          for (var i = 0; i < childNodes.length; i++) {
+            var child = childNodes[i];
+
+            if (child.nodeType === 1) {
+              var tagName = child.tagName;
+              var is = child.hasAttribute('is');
+              if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
+                if (name) throw new Error('bad template');
+                name = tagName.toLowerCase();
+                template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
+                  return '${' + $1 + '}';
+                });
+                if (is) as = child.getAttribute('is').toLowerCase();
+                if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
+              } else if (/^script$/i.test(tagName)) {
+                if (script) throw new Error('bad template');
+                var module = cjs({
+                  reactive: reactive,
+                  render: render,
+                  html: html,
+                  svg: svg
+                });
+                script = module(child.textContent.replace(/^\s*export\s+default(\s+)/mg, 'module.exports$1=').replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)([^;\n]+)/g, function (_, $1, $2, $3, $4) {
+                  return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $4 + ')';
+                }));
+              }
+            }
+          }
+
+          var selector = as ? name + '[is="' + as + '"]' : name;
+
+          for (var _i = styles.length; _i--;) {
+            var _child = styles[_i];
+            var textContent = _child.textContent;
+            if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
+              (function () {
+                var def = [];
+                css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
+                  return '\x01' + def.push($1) + ',';
+                }).split(',').map(function (s) {
+                  return s.trim() ? selector + ' ' + s.trim() : '';
+                }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
+                  return '{' + def[--$1] + '}';
+                }).replace(/(,\n)+/g, ',\n');
+              })();
+            } else css += textContent;
+          }
+
+          var params = partial(template);
+          var _script = script,
+              observedAttributes = _script.observedAttributes,
+              props = _script.props;
+          define(as || name, {
+            observedAttributes: observedAttributes,
+            style: css ? function () {
+              return css;
+            } : null,
+            "extends": as ? name : 'element',
+            attachShadow: shadow ? {
+              mode: shadow
+            } : null,
+            attributeChanged: observedAttributes && function () {
+              if (this.hasOwnProperty('attributeChanged')) this.attributeChanged();
+            },
+            connected: function connected() {
+              if (this.hasOwnProperty('connected')) this.connected();
+            },
+            disconnected: function disconnected() {
+              if (this.hasOwnProperty('disconnected')) this.connected();
+            },
+            init: function init() {
+              var self = this;
+              var html = self.html;
+              var init = true;
+              var context = null;
+              (this.render = augmentor(function () {
+                if (init) {
+                  init = false;
+                  if (props) domHandler(self, props);
+                  context = script.setup(self);
+                }
+
+                html.apply(null, params(context));
+              }))();
+            }
+          });
+        });
+      }
     });
   });
 

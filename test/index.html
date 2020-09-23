@@ -3,59 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
   <title>WIP: uce-template</title>
-
-  <!-- Custom Elements polyfill compatible with builtin extends -->
   <script defer src="https://unpkg.com/@ungap/custom-elements"></script>
-
-  <!-- the bundled module -->
-  <script defer src="../index.js"></script>
-
-  <!-- dependencies graph to `resolve(...)` -->
-  <script type="json" is="uce-require">
-  {
-    "bundle": "js/bundle.js"
-  }
-  </script>
-
+  <script defer src="../min.js"></script>
   <style>
-  /* you know, legacy browsers */
-  template { display: none; }
+    body {
+      font-family: sans-serif;
+      user-select: none;
+    }
+    template {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <!-- an SSR compatible way to define components -->
   <template is="uce-template">
 
-    <!--
-      component template with optional shadow attribute:
-        * <my-comp shadow> or <my-comp shadow="open"> creates open ShadowDOM
-        * <my-comp shadow="closed"> creates closed ShadowDOM
-        * no shadow means no ShadowDOM needed/used
-    -->
     <my-counter>
       <button onclick={{dec}}>
         -
       </button>
-      <span>{{state.count}} {{element.text}}</span>
+      <span>{{state.count}}</span>
       <button onclick={{inc}}>
         +
       </button>
     </my-counter>
 
-    <!--
-      optional script with pre-defined helpers:
-        * reactive(state) helper from reactive-props/state
-        * render(...), html`...`, and svg`...` utilities from uce/uhtml
-    -->
     <script type="module">
-
-    import test from "bundle";
-    console.log(test);
-
     export default {
-      // performed once, receives the current DOM element
       setup: function (element) {
         var state = reactive({
           count: 0
@@ -79,17 +54,10 @@
           inc: inc,
           dec: dec
         };
-      },
-      props: {text: ''}
+      }
     };
     </script>
 
-    <!--
-      optional style (one or more styles)
-        * global by default (no scoped, no shadow)
-        * if scoped, prefixes styles with the component name
-        * if shadow, it's injected on top of the ShadowDOM
-    -->
     <style scoped>
     span,
     button {
@@ -110,18 +78,13 @@
     }
     </style>
 
-    <!-- global style example -->
-    <style>
-    body {
-      font-family: sans-serif;
-    }
-    </style>
   </template>
 
-  <!-- the defined components in the wild -->
-  <my-counter></my-counter>
-  <hr>
-  <my-counter></my-counter>
+  <main>
+    <my-counter></my-counter>
+    <hr>
+    <my-counter></my-counter>
+  </main>
 
 </body>
 </html>

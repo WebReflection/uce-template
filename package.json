@@ -40,6 +40,6 @@
     "@ungap/create-content": "^0.2.0",
     "augmentor": "^2.2.0",
     "tag-params": "^1.0.6",
-    "uce-require": "0.0.4"
+    "uce-require": "0.0.8"
   }
 }

@@ -1,1 +1,1 @@
-var out = 'Module loaded OK';
+module.exports = 'Bundle loaded OK';
