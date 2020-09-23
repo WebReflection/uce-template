@@ -1,6 +1,574 @@
 (function () {
   'use strict';
 
+  /*! (c) Andrea Giammarchi @webreflection ISC */
+  (function () {
+
+    var Lie = typeof Promise === 'function' ? Promise : function (fn) {
+      var queue = [],
+          resolved = 0,
+          value;
+      fn(function ($) {
+        value = $;
+        resolved = 1;
+        queue.splice(0).forEach(then);
+      });
+      return {
+        then: then
+      };
+
+      function then(fn) {
+        return resolved ? setTimeout(fn, 0, value) : queue.push(fn), this;
+      }
+    };
+
+    var attributesObserver = function attributesObserver(whenDefined, MutationObserver) {
+      var attributeChanged = function attributeChanged(records) {
+        for (var i = 0, length = records.length; i < length; i++) {
+          dispatch(records[i]);
+        }
+      };
+
+      var dispatch = function dispatch(_ref) {
+        var target = _ref.target,
+            attributeName = _ref.attributeName,
+            oldValue = _ref.oldValue;
+        target.attributeChangedCallback(attributeName, oldValue, target.getAttribute(attributeName));
+      };
+
+      return function (target, is) {
+        var attributeFilter = target.constructor.observedAttributes;
+
+        if (attributeFilter) {
+          whenDefined(is).then(function () {
+            new MutationObserver(attributeChanged).observe(target, {
+              attributes: true,
+              attributeOldValue: true,
+              attributeFilter: attributeFilter
+            });
+
+            for (var i = 0, length = attributeFilter.length; i < length; i++) {
+              if (target.hasAttribute(attributeFilter[i])) dispatch({
+                target: target,
+                attributeName: attributeFilter[i],
+                oldValue: null
+              });
+            }
+          });
+        }
+
+        return target;
+      };
+    };
+
+    var _self = self,
+        document = _self.document,
+        MutationObserver = _self.MutationObserver,
+        Set = _self.Set,
+        WeakMap = _self.WeakMap;
+
+    var elements = function elements(element) {
+      return 'querySelectorAll' in element;
+    };
+
+    var filter = [].filter;
+
+    var qsaObserver = function qsaObserver(options) {
+      var live = new WeakMap();
+
+      var callback = function callback(records) {
+        var query = options.query;
+
+        if (query.length) {
+          for (var i = 0, length = records.length; i < length; i++) {
+            loop(filter.call(records[i].addedNodes, elements), true, query);
+            loop(filter.call(records[i].removedNodes, elements), false, query);
+          }
+        }
+      };
+
+      var drop = function drop(elements) {
+        for (var i = 0, length = elements.length; i < length; i++) {
+          live["delete"](elements[i]);
+        }
+      };
+
+      var flush = function flush() {
+        callback(observer.takeRecords());
+      };
+
+      var loop = function loop(elements, connected, query) {
+        var set = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Set();
+
+        var _loop = function _loop(_selectors, _element, i, length) {
+          // guard against repeated elements within nested querySelectorAll results
+          if (!set.has(_element = elements[i])) {
+            set.add(_element);
+
+            if (connected) {
+              for (var q, m = matches(_element), _i = 0, _length = query.length; _i < _length; _i++) {
+                if (m.call(_element, q = query[_i])) {
+                  if (!live.has(_element)) live.set(_element, new Set());
+                  _selectors = live.get(_element); // guard against selectors that were handled already
+
+                  if (!_selectors.has(q)) {
+                    _selectors.add(q);
+
+                    options.handle(_element, connected, q);
+                  }
+                }
+              }
+            } // guard against elements that never became live
+            else if (live.has(_element)) {
+                _selectors = live.get(_element);
+                live["delete"](_element);
+
+                _selectors.forEach(function (q) {
+                  options.handle(_element, connected, q);
+                });
+              }
+
+            loop(_element.querySelectorAll(query), connected, query, set);
+          }
+
+          selectors = _selectors;
+          element = _element;
+        };
+
+        for (var selectors, element, i = 0, length = elements.length; i < length; i++) {
+          _loop(selectors, element, i);
+        }
+      };
+
+      var matches = function matches(element) {
+        return element.matches || element.webkitMatchesSelector || element.msMatchesSelector;
+      };
+
+      var parse = function parse(elements) {
+        var connected = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+        loop(elements, connected, options.query);
+      };
+
+      var observer = new MutationObserver(callback);
+      var root = options.root || document;
+      var query = options.query;
+      observer.observe(root, {
+        childList: true,
+        subtree: true
+      });
+      if (query.length) parse(root.querySelectorAll(query));
+      return {
+        drop: drop,
+        flush: flush,
+        observer: observer,
+        parse: parse
+      };
+    };
+
+    var _self$1 = self,
+        document$1 = _self$1.document,
+        Map = _self$1.Map,
+        MutationObserver$1 = _self$1.MutationObserver,
+        Object = _self$1.Object,
+        Set$1 = _self$1.Set,
+        WeakMap$1 = _self$1.WeakMap,
+        Element = _self$1.Element,
+        HTMLElement = _self$1.HTMLElement,
+        Node = _self$1.Node,
+        Error = _self$1.Error,
+        TypeError = _self$1.TypeError;
+    var Promise$1 = self.Promise || Lie;
+    var defineProperty = Object.defineProperty,
+        getOwnPropertyNames = Object.getOwnPropertyNames,
+        setPrototypeOf = Object.setPrototypeOf;
+    var legacy = !self.customElements;
+
+    if (legacy) {
+      var HTMLBuiltIn = function HTMLBuiltIn() {
+        var constructor = this.constructor;
+        if (!classes.has(constructor)) throw new TypeError('Illegal constructor');
+        var is = classes.get(constructor);
+        if (override) return augment(override, is);
+        var element = createElement.call(document$1, is);
+        return augment(setPrototypeOf(element, constructor.prototype), is);
+      };
+
+      var createElement = document$1.createElement;
+      var classes = new Map();
+      var defined = new Map();
+      var prototypes = new Map();
+      var registry = new Map();
+      var query = [];
+
+      var handle = function handle(element, connected, selector) {
+        var proto = prototypes.get(selector);
+
+        if (connected && !proto.isPrototypeOf(element)) {
+          override = setPrototypeOf(element, proto);
+
+          try {
+            new proto.constructor();
+          } finally {
+            override = null;
+          }
+        }
+
+        var method = "".concat(connected ? '' : 'dis', "connectedCallback");
+        if (method in proto) element[method]();
+      };
+
+      var _qsaObserver = qsaObserver({
+        query: query,
+        handle: handle
+      }),
+          parse = _qsaObserver.parse;
+
+      var override = null;
+
+      var whenDefined = function whenDefined(name) {
+        if (!defined.has(name)) {
+          var _,
+              $ = new Lie(function ($) {
+            _ = $;
+          });
+
+          defined.set(name, {
+            $: $,
+            _: _
+          });
+        }
+
+        return defined.get(name).$;
+      };
+
+      var augment = attributesObserver(whenDefined, MutationObserver$1);
+      defineProperty(self, 'customElements', {
+        configurable: true,
+        value: {
+          _: {
+            classes: classes
+          },
+          define: function define(is, Class) {
+            if (registry.has(is)) throw new Error("the name \"".concat(is, "\" has already been used with this registry"));
+            classes.set(Class, is);
+            prototypes.set(is, Class.prototype);
+            registry.set(is, Class);
+            query.push(is);
+            whenDefined(is).then(function () {
+              parse(document$1.querySelectorAll(is));
+            });
+
+            defined.get(is)._(Class);
+          },
+          get: function get(is) {
+            return registry.get(is);
+          },
+          whenDefined: whenDefined
+        }
+      });
+      (HTMLBuiltIn.prototype = HTMLElement.prototype).constructor = HTMLBuiltIn;
+      defineProperty(self, 'HTMLElement', {
+        configurable: true,
+        value: HTMLBuiltIn
+      });
+      defineProperty(document$1, 'createElement', {
+        configurable: true,
+        value: function value(name, options) {
+          var is = options && options.is;
+          var Class = is ? registry.get(is) : registry.get(name);
+          return Class ? new Class() : createElement.call(document$1, name);
+        }
+      }); // in case ShadowDOM is used through a polyfill, to avoid issues
+      // with builtin extends within shadow roots
+
+      if (!('isConnected' in Node.prototype)) defineProperty(Node.prototype, 'isConnected', {
+        configurable: true,
+        get: function get() {
+          return !(this.ownerDocument.compareDocumentPosition(this) & this.DOCUMENT_POSITION_DISCONNECTED);
+        }
+      });
+    } else {
+      try {
+        var LI = function LI() {
+          return self.Reflect.construct(HTMLLIElement, [], LI);
+        };
+
+        LI.prototype = HTMLLIElement.prototype;
+        var is = 'extends-li';
+        self.customElements.define('extends-li', LI, {
+          'extends': 'li'
+        });
+        legacy = document$1.createElement('li', {
+          is: is
+        }).outerHTML.indexOf(is) < 0;
+        var _self$customElements = self.customElements,
+            get = _self$customElements.get,
+            _whenDefined = _self$customElements.whenDefined;
+        defineProperty(self.customElements, 'whenDefined', {
+          configurable: true,
+          value: function value(is) {
+            var _this = this;
+
+            return _whenDefined.call(this, is).then(function (Class) {
+              return Class || get.call(_this, is);
+            });
+          }
+        });
+      } catch (o_O) {
+        legacy = !legacy;
+      }
+    }
+
+    if (legacy) {
+      var parseShadow = function parseShadow(element) {
+        var _shadowRoots$get = shadowRoots.get(element),
+            parse = _shadowRoots$get.parse,
+            root = _shadowRoots$get.root;
+
+        parse(root.querySelectorAll(this), element.isConnected);
+      };
+
+      var customElements = self.customElements;
+      var attachShadow = Element.prototype.attachShadow;
+      var _createElement = document$1.createElement;
+      var _ = customElements._,
+          define = customElements.define,
+          _get = customElements.get;
+      var shadowRoots = new WeakMap$1();
+      var shadows = new Set$1();
+
+      var _classes = new Map();
+
+      var _defined = new Map();
+
+      var _prototypes = new Map();
+
+      var _registry = new Map();
+
+      var shadowed = [];
+      var _query = [];
+
+      var getCE = function getCE(is) {
+        return _registry.get(is) || _get.call(customElements, is);
+      };
+
+      var _handle = function _handle(element, connected, selector) {
+        var proto = _prototypes.get(selector);
+
+        if (connected && !proto.isPrototypeOf(element)) {
+          _override = setPrototypeOf(element, proto);
+
+          try {
+            new proto.constructor();
+          } finally {
+            _override = null;
+          }
+        }
+
+        var method = "".concat(connected ? '' : 'dis', "connectedCallback");
+        if (method in proto) element[method]();
+      };
+
+      var _qsaObserver2 = qsaObserver({
+        query: _query,
+        handle: _handle
+      }),
+          _parse = _qsaObserver2.parse;
+
+      var _qsaObserver3 = qsaObserver({
+        query: shadowed,
+        handle: function handle(element, connected) {
+          if (shadowRoots.has(element)) {
+            if (connected) shadows.add(element);else shadows["delete"](element);
+            parseShadow.call(_query, element);
+          }
+        }
+      }),
+          parseShadowed = _qsaObserver3.parse;
+
+      var _whenDefined2 = function _whenDefined2(name) {
+        if (!_defined.has(name)) {
+          var _2,
+              $ = new Promise$1(function ($) {
+            _2 = $;
+          });
+
+          _defined.set(name, {
+            $: $,
+            _: _2
+          });
+        }
+
+        return _defined.get(name).$;
+      };
+
+      var _augment = attributesObserver(_whenDefined2, MutationObserver$1);
+
+      var _override = null;
+      getOwnPropertyNames(self).filter(function (k) {
+        return /^HTML(?!Element)/.test(k);
+      }).forEach(function (k) {
+        function HTMLBuiltIn() {
+          var constructor = this.constructor;
+
+          if (!_classes.has(constructor)) {
+            if (_ && _.classes.has(constructor)) return;
+            throw new TypeError('Illegal constructor');
+          }
+
+          var _classes$get = _classes.get(constructor),
+              is = _classes$get.is,
+              tag = _classes$get.tag;
+
+          if (_override) return _augment(_override, is);
+
+          var element = _createElement.call(document$1, tag);
+
+          element.setAttribute('is', is);
+          return _augment(setPrototypeOf(element, constructor.prototype), is);
+        }
+
+        (HTMLBuiltIn.prototype = self[k].prototype).constructor = HTMLBuiltIn;
+        defineProperty(self, k, {
+          value: HTMLBuiltIn
+        });
+      });
+      defineProperty(document$1, 'createElement', {
+        value: function value(name, options) {
+          var is = options && options.is;
+
+          if (is) {
+            var Class = _registry.get(is);
+
+            if (Class && _classes.get(Class).tag === name) return new Class();
+          }
+
+          var element = _createElement.call(document$1, name);
+
+          if (is) element.setAttribute('is', is);
+          return element;
+        }
+      });
+      defineProperty(Element.prototype, 'attachShadow', {
+        value: function value() {
+          var root = attachShadow.apply(this, arguments);
+
+          var _qsaObserver4 = qsaObserver({
+            query: _query,
+            root: root,
+            handle: _handle
+          }),
+              parse = _qsaObserver4.parse;
+
+          shadowRoots.set(this, {
+            root: root,
+            parse: parse
+          });
+          return root;
+        }
+      });
+      defineProperty(customElements, 'get', {
+        configurable: true,
+        value: getCE
+      });
+      defineProperty(customElements, 'whenDefined', {
+        configurable: true,
+        value: _whenDefined2
+      });
+      defineProperty(customElements, 'define', {
+        configurable: true,
+        value: function value(is, Class, options) {
+          var selector;
+          var tag = options && options["extends"];
+
+          if (tag) {
+            if (getCE(is)) throw new Error("'".concat(is, "' has already been defined as a custom element"));
+            selector = "".concat(tag, "[is=\"").concat(is, "\"]");
+
+            _classes.set(Class, {
+              is: is,
+              tag: tag
+            });
+
+            _prototypes.set(selector, Class.prototype);
+
+            _registry.set(is, Class);
+
+            _query.push(selector);
+          } else {
+            define.apply(customElements, arguments);
+            shadowed.push(selector = is);
+          }
+
+          _whenDefined2(is).then(function () {
+            if (tag) {
+              _parse(document$1.querySelectorAll(selector));
+
+              shadows.forEach(parseShadow, [selector]);
+            } else parseShadowed(document$1.querySelectorAll(selector));
+          });
+
+          _defined.get(is)._(Class);
+        }
+      });
+    }
+  })();
+
+  /*! (c) Andrea Giammarchi - ISC */
+  var createContent = function (document) {
+
+    var FRAGMENT = 'fragment';
+    var TEMPLATE = 'template';
+    var HAS_CONTENT = ('content' in create(TEMPLATE));
+    var createHTML = HAS_CONTENT ? function (html) {
+      var template = create(TEMPLATE);
+      template.innerHTML = html;
+      return template.content;
+    } : function (html) {
+      var content = create(FRAGMENT);
+      var template = create(TEMPLATE);
+      var childNodes = null;
+
+      if (/^[^\S]*?<(col(?:group)?|t(?:head|body|foot|r|d|h))/i.test(html)) {
+        var selector = RegExp.$1;
+        template.innerHTML = '<table>' + html + '</table>';
+        childNodes = template.querySelectorAll(selector);
+      } else {
+        template.innerHTML = html;
+        childNodes = template.childNodes;
+      }
+
+      append(content, childNodes);
+      return content;
+    };
+    return function createContent(markup, type) {
+      return (type === 'svg' ? createSVG : createHTML)(markup);
+    };
+
+    function append(root, childNodes) {
+      var length = childNodes.length;
+
+      while (length--) {
+        root.appendChild(childNodes[0]);
+      }
+    }
+
+    function create(element) {
+      return element === FRAGMENT ? document.createDocumentFragment() : document.createElementNS('http://www.w3.org/1999/xhtml', element);
+    } // it could use createElementNS when hasNode is there
+    // but this fallback is equally fast and easier to maintain
+    // it is also battle tested already in all IE
+
+
+    function createSVG(svg) {
+      var content = create(FRAGMENT);
+      var template = create('div');
+      template.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>';
+      append(content, template.firstChild.childNodes);
+      return content;
+    }
+  }(document);
+
   var compat = typeof cancelAnimationFrame === 'function';
   var cAF = compat ? cancelAnimationFrame : clearTimeout;
   var rAF = compat ? requestAnimationFrame : setTimeout;
@@ -137,64 +705,240 @@
     return useReducer(getValue, value, void 0, options);
   }; // useContext
 
+  var hooks = new WeakMap();
+
+  var invoke = function invoke(_ref2) {
+    var hook = _ref2.hook,
+        args = _ref2.args;
+    hook.apply(null, args);
+  };
+
+  var createContext = function createContext(value) {
+    var context = {
+      value: value,
+      provide: provide
+    };
+    hooks.set(context, []);
+    return context;
+  };
+  var useContext = function useContext(context) {
+    var _state2 = state,
+        hook = _state2.hook,
+        args = _state2.args;
+    var stack = hooks.get(context);
+    var info = {
+      hook: hook,
+      args: args
+    };
+    if (!stack.some(update, info)) stack.push(info);
+    return context.value;
+  };
+
+  function provide(value) {
+    if (this.value !== value) {
+      this.value = value;
+      hooks.get(this).forEach(invoke);
+    }
+  }
+
+  function update(_ref3) {
+    var hook = _ref3.hook;
+    return hook === this.hook;
+  } // dropEffect, hasEffect, useEffect, useLayoutEffect
+
 
   var effects = new WeakMap();
-  var hasEffect = effects.has.bind(effects);
+  var fx = umap(effects);
 
-  /*! (c) Andrea Giammarchi - ISC */
-  var createContent = function (document) {
+  var stop = function stop() {};
 
-    var FRAGMENT = 'fragment';
-    var TEMPLATE = 'template';
-    var HAS_CONTENT = ('content' in create(TEMPLATE));
-    var createHTML = HAS_CONTENT ? function (html) {
-      var template = create(TEMPLATE);
-      template.innerHTML = html;
-      return template.content;
-    } : function (html) {
-      var content = create(FRAGMENT);
-      var template = create(TEMPLATE);
-      var childNodes = null;
+  var createEffect = function createEffect(asy) {
+    return function (effect, guards) {
+      var i = state.i++;
+      var _state3 = state,
+          hook = _state3.hook,
+          after = _state3.after,
+          stack = _state3.stack,
+          length = _state3.length;
 
-      if (/^[^\S]*?<(col(?:group)?|t(?:head|body|foot|r|d|h))/i.test(html)) {
-        var selector = RegExp.$1;
-        template.innerHTML = '<table>' + html + '</table>';
-        childNodes = template.querySelectorAll(selector);
+      if (i < length) {
+        var info = stack[i];
+        var _update = info.update,
+            values = info.values,
+            _stop = info.stop;
+
+        if (!guards || guards.some(different, values)) {
+          info.values = guards;
+          if (asy) _stop(asy);
+          var clean = info.clean;
+
+          if (clean) {
+            info.clean = null;
+            clean();
+          }
+
+          var _invoke = function _invoke() {
+            info.clean = effect();
+          };
+
+          if (asy) _update(_invoke);else after.push(_invoke);
+        }
       } else {
-        template.innerHTML = html;
-        childNodes = template.childNodes;
+        var _update2 = asy ? reraf() : stop;
+
+        var _info = {
+          clean: null,
+          update: _update2,
+          values: guards,
+          stop: stop
+        };
+        state.length = stack.push(_info);
+        (fx.get(hook) || fx.set(hook, [])).push(_info);
+
+        var _invoke2 = function _invoke2() {
+          _info.clean = effect();
+        };
+
+        if (asy) _info.stop = _update2(_invoke2);else after.push(_invoke2);
       }
-
-      append(content, childNodes);
-      return content;
     };
-    return function createContent(markup, type) {
-      return (type === 'svg' ? createSVG : createHTML)(markup);
+  };
+  var hasEffect = effects.has.bind(effects);
+  var useEffect = createEffect(true);
+  var useLayoutEffect = createEffect(false); // useMemo, useCallback
+
+  var useMemo = function useMemo(memo, guards) {
+    var i = state.i++;
+    var _state4 = state,
+        stack = _state4.stack,
+        length = _state4.length;
+    if (i === length) state.length = stack.push({
+      $: memo(),
+      _: guards
+    });else if (!guards || guards.some(different, stack[i]._)) stack[i] = {
+      $: memo(),
+      _: guards
     };
+    return stack[i].$;
+  };
+  var useCallback = function useCallback(fn, guards) {
+    return useMemo(function () {
+      return fn;
+    }, guards);
+  }; // useRef
 
-    function append(root, childNodes) {
-      var length = childNodes.length;
+  var useRef = function useRef(value) {
+    var i = state.i++;
+    var _state5 = state,
+        stack = _state5.stack,
+        length = _state5.length;
+    if (i === length) state.length = stack.push({
+      current: value
+    });
+    return stack[i];
+  };
 
-      while (length--) {
-        root.appendChild(childNodes[0]);
+  function different(value, i) {
+    return value !== this[i];
+  }
+
+  /**
+   * @typedef {object} ParseResult an object with parsed results
+   * @property {string[]} template - the list of chunks around interpolations
+   * @property {string[]} values - interpolations as strings
+   */
+
+  /**
+   * @typedef {[string[], ...any[]]} TagArguments an array to use as template
+   *                                              literals tag arguments
+   */
+
+  /**
+   * @callback Partial a callback that re-evaluate each time new data associated
+   *                   to the same template-like array.
+   * @param {object} [object] the optional data to evaluate as interpolated values
+   * @returns {TagArguments} an array to use as template literals tag arguments
+   */
+
+  /**
+  * The default `transform` callback
+  * @param {string} value the interpolation value as string
+  */
+  var noop = function noop(value) {
+    return value;
+  };
+  /**
+   * The default "null" fallback when no object is passed to the Partial.
+   */
+
+
+  var fallback = Object.create(null);
+  /**
+   * Given a string and an optional function used to transform each value
+   * found as interpolated content, returns an object with a `template` and
+   * a `values` properties, as arrays, containing the template chunks,
+   * and all its interpolations as strings.
+   * @param {string} content the string to parse/convert as template chunks
+   * @param {function} [transform] the optional function to modify string values
+   * @returns {ParseResult} an object with `template` and `values` arrays.
+   */
+
+  var parse = function parse(content, transform) {
+    var fn = transform || noop;
+    var template = [];
+    var values = [];
+    var length = content.length;
+    var i = 0;
+
+    while (i <= length) {
+      var open = content.indexOf('${', i);
+
+      if (-1 < open) {
+        template.push(content.slice(i, open));
+        open = i = open + 2;
+        var close = 1; // TODO: this *might* break if the interpolation has strings
+        //       containing random `{}` chars ... but implementing
+        //       a whole JS parser here doesn't seem worth it
+        //       for such irrelevant edge-case ... or does it?
+
+        while (0 < close && i < length) {
+          var c = content[i++];
+          close += c === '{' ? 1 : c === '}' ? -1 : 0;
+        }
+
+        values.push(fn(content.slice(open, i - 1)));
+      } else {
+        template.push(content.slice(i));
+        i = length + 1;
       }
     }
 
-    function create(element) {
-      return element === FRAGMENT ? document.createDocumentFragment() : document.createElementNS('http://www.w3.org/1999/xhtml', element);
-    } // it could use createElementNS when hasNode is there
-    // but this fallback is equally fast and easier to maintain
-    // it is also battle tested already in all IE
+    return {
+      template: template,
+      values: values
+    };
+  };
+  /**
+   * Given a string and an optional function used to transform each value
+   * found as interpolated content, returns a callback that can be used to
+   * repeatedly generate new content from the same template array.
+   * @param {string} content the string to parse/convert as template chunks
+   * @param {function} [transform] the optional function to modify string values
+   * @returns {Partial} a function that accepts an optional object to generate
+   *                    new content, through the same template, each time.
+   */
 
+  var partial = function partial(content, transform) {
+    var _parse = parse(content, transform),
+        template = _parse.template,
+        values = _parse.values;
 
-    function createSVG(svg) {
-      var content = create(FRAGMENT);
-      var template = create('div');
-      template.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>';
-      append(content, template.firstChild.childNodes);
-      return content;
-    }
-  }(document);
+    var args = [template];
+    var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
+    return function (object) {
+      return args.concat(rest(object || fallback));
+    };
+  };
 
   function _typeof(obj) {
     "@babel/helpers - typeof";
@@ -312,191 +1056,6 @@
       return _possibleConstructorReturn(this, result);
     };
   }
-
-  var defineProperties = Object.defineProperties,
-      keys = Object.keys;
-
-  var accessor = function accessor(all, shallow, hook, value, update) {
-    return {
-      configurable: true,
-      get: function get() {
-        return value;
-      },
-      set: function set(_) {
-        if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
-          value = _;
-          if (hook) update.call(this, value);else update.call(this);
-        }
-      }
-    };
-  };
-
-  var loop = function loop(props, get, all, shallow, useState, update) {
-    var desc = {};
-    var hook = useState !== noop;
-    var args = [all, shallow, hook];
-
-    for (var ke = keys(props), y = 0; y < ke.length; y++) {
-      var value = get(props, ke[y]);
-      var extras = hook ? useState(value) : [value, useState];
-      if (update) extras[1] = update;
-      desc[ke[y]] = accessor.apply(null, args.concat(extras));
-    }
-
-    return desc;
-  };
-  var noop = function noop() {};
-
-  var domHandler = (function () {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$all = _ref.all,
-        all = _ref$all === void 0 ? false : _ref$all,
-        _ref$shallow = _ref.shallow,
-        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
-        _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState,
-        _ref$getAttribute = _ref.getAttribute,
-        getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
-      return element.getAttribute(key);
-    } : _ref$getAttribute;
-
-    return function (element, props, update) {
-      var value = function value(props, key) {
-        var result = props[key];
-
-        if (element.hasOwnProperty(key)) {
-          result = element[key];
-          delete element[key];
-        } else if (element.hasAttribute(key)) result = getAttribute(element, key);
-
-        return result;
-      };
-
-      var desc = loop(props, value, all, shallow, useState, update);
-      return defineProperties(element, desc);
-    };
-  });
-
-  var value = function value(props, key) {
-    return props[key];
-  };
-
-  var state$1 = (function () {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$all = _ref.all,
-        all = _ref$all === void 0 ? false : _ref$all,
-        _ref$shallow = _ref.shallow,
-        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
-        _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState;
-
-    return function (props, update) {
-      return defineProperties({}, loop(props, value, all, shallow, useState, update));
-    };
-  });
-
-  var stateHandler = (function () {
-    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    return (options.dom ? domHandler : state$1)(options);
-  });
-
-  /**
-   * @typedef {object} ParseResult an object with parsed results
-   * @property {string[]} template - the list of chunks around interpolations
-   * @property {string[]} values - interpolations as strings
-   */
-
-  /**
-   * @typedef {[string[], ...any[]]} TagArguments an array to use as template
-   *                                              literals tag arguments
-   */
-
-  /**
-   * @callback Partial a callback that re-evaluate each time new data associated
-   *                   to the same template-like array.
-   * @param {object} [object] the optional data to evaluate as interpolated values
-   * @returns {TagArguments} an array to use as template literals tag arguments
-   */
-
-  /**
-  * The default `transform` callback
-  * @param {string} value the interpolation value as string
-  */
-  var noop$1 = function noop(value) {
-    return value;
-  };
-  /**
-   * The default "null" fallback when no object is passed to the Partial.
-   */
-
-
-  var fallback = Object.create(null);
-  /**
-   * Given a string and an optional function used to transform each value
-   * found as interpolated content, returns an object with a `template` and
-   * a `values` properties, as arrays, containing the template chunks,
-   * and all its interpolations as strings.
-   * @param {string} content the string to parse/convert as template chunks
-   * @param {function} [transform] the optional function to modify string values
-   * @returns {ParseResult} an object with `template` and `values` arrays.
-   */
-
-  var parse = function parse(content, transform) {
-    var fn = transform || noop$1;
-    var template = [];
-    var values = [];
-    var length = content.length;
-    var i = 0;
-
-    while (i <= length) {
-      var open = content.indexOf('${', i);
-
-      if (-1 < open) {
-        template.push(content.slice(i, open));
-        open = i = open + 2;
-        var close = 1; // TODO: this *might* break if the interpolation has strings
-        //       containing random `{}` chars ... but implementing
-        //       a whole JS parser here doesn't seem worth it
-        //       for such irrelevant edge-case ... or does it?
-
-        while (0 < close && i < length) {
-          var c = content[i++];
-          close += c === '{' ? 1 : c === '}' ? -1 : 0;
-        }
-
-        values.push(fn(content.slice(open, i - 1)));
-      } else {
-        template.push(content.slice(i));
-        i = length + 1;
-      }
-    }
-
-    return {
-      template: template,
-      values: values
-    };
-  };
-  /**
-   * Given a string and an optional function used to transform each value
-   * found as interpolated content, returns a callback that can be used to
-   * repeatedly generate new content from the same template array.
-   * @param {string} content the string to parse/convert as template chunks
-   * @param {function} [transform] the optional function to modify string values
-   * @returns {Partial} a function that accepts an optional object to generate
-   *                    new content, through the same template, each time.
-   */
-
-  var partial = function partial(content, transform) {
-    var _parse = parse(content, transform),
-        template = _parse.template,
-        values = _parse.values;
-
-    var args = [template];
-    var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
-    return function (object) {
-      return args.concat(rest(object || fallback));
-    };
-  };
 
   var attr = /([^\s\\>"'=]+)\s*=\s*(['"]?)$/;
   var empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
@@ -1165,7 +1724,7 @@
   }
 
   var create = Object.create,
-      defineProperties$1 = Object.defineProperties; // both `html` and `svg` template literal tags are polluted
+      defineProperties = Object.defineProperties; // both `html` and `svg` template literal tags are polluted
   // with a `for(ref[, id])` and a `node` tag too
 
   var tag = function tag(type) {
@@ -1187,7 +1746,7 @@
       };
     };
 
-    return defineProperties$1( // non keyed operations are recognized as instance of Hole
+    return defineProperties( // non keyed operations are recognized as instance of Hole
     // during the "unroll", recursively resolved and updated
     function (template) {
       for (var _len2 = arguments.length, values = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
@@ -1261,7 +1820,71 @@
     return s;
   }
 
-  var reactive = domHandler({
+  var defineProperties$1 = Object.defineProperties,
+      keys = Object.keys;
+
+  var accessor = function accessor(all, shallow, hook, value, update) {
+    return {
+      configurable: true,
+      get: function get() {
+        return value;
+      },
+      set: function set(_) {
+        if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
+          value = _;
+          if (hook) update.call(this, value);else update.call(this);
+        }
+      }
+    };
+  };
+
+  var loop = function loop(props, get, all, shallow, useState, update) {
+    var desc = {};
+    var hook = useState !== noop$1;
+    var args = [all, shallow, hook];
+
+    for (var ke = keys(props), y = 0; y < ke.length; y++) {
+      var value = get(props, ke[y]);
+      var extras = hook ? useState(value) : [value, useState];
+      if (update) extras[1] = update;
+      desc[ke[y]] = accessor.apply(null, args.concat(extras));
+    }
+
+    return desc;
+  };
+  var noop$1 = function noop() {};
+
+  var dom = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop$1 : _ref$useState,
+        _ref$getAttribute = _ref.getAttribute,
+        getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
+      return element.getAttribute(key);
+    } : _ref$getAttribute;
+
+    return function (element, props, update) {
+      var value = function value(props, key) {
+        var result = props[key];
+
+        if (element.hasOwnProperty(key)) {
+          result = element[key];
+          delete element[key];
+        } else if (element.hasAttribute(key)) result = getAttribute(element, key);
+
+        return result;
+      };
+
+      var desc = loop(props, value, all, shallow, useState, update);
+      return defineProperties$1(element, desc);
+    };
+  });
+
+  var reactive = dom({
     dom: true
   });
   var CE = customElements;
@@ -1509,6 +2132,132 @@
     return render(this, html.apply(null, arguments));
   }
 
+  var value = function value(props, key) {
+    return props[key];
+  };
+
+  var state$1 = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop$1 : _ref$useState;
+
+    return function (props, update) {
+      return defineProperties$1({}, loop(props, value, all, shallow, useState, update));
+    };
+  });
+
+  var stateHandler = (function () {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    return (options.dom ? dom : state$1)(options);
+  });
+
+  var _self = self,
+      document$1 = _self.document,
+      MutationObserver = _self.MutationObserver,
+      Set = _self.Set,
+      WeakMap$1 = _self.WeakMap;
+
+  var elements = function elements(element) {
+    return 'querySelectorAll' in element;
+  };
+
+  var filter = [].filter;
+  var QSAO = (function (options) {
+    var live = new WeakMap$1();
+
+    var callback = function callback(records) {
+      var query = options.query;
+
+      if (query.length) {
+        for (var i = 0, length = records.length; i < length; i++) {
+          loop(filter.call(records[i].addedNodes, elements), true, query);
+          loop(filter.call(records[i].removedNodes, elements), false, query);
+        }
+      }
+    };
+
+    var drop = function drop(elements) {
+      for (var i = 0, length = elements.length; i < length; i++) {
+        live["delete"](elements[i]);
+      }
+    };
+
+    var flush = function flush() {
+      callback(observer.takeRecords());
+    };
+
+    var loop = function loop(elements, connected, query) {
+      var set = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Set();
+
+      var _loop = function _loop(_selectors, _element, i, length) {
+        // guard against repeated elements within nested querySelectorAll results
+        if (!set.has(_element = elements[i])) {
+          set.add(_element);
+
+          if (connected) {
+            for (var q, m = matches(_element), _i = 0, _length = query.length; _i < _length; _i++) {
+              if (m.call(_element, q = query[_i])) {
+                if (!live.has(_element)) live.set(_element, new Set());
+                _selectors = live.get(_element); // guard against selectors that were handled already
+
+                if (!_selectors.has(q)) {
+                  _selectors.add(q);
+
+                  options.handle(_element, connected, q);
+                }
+              }
+            }
+          } // guard against elements that never became live
+          else if (live.has(_element)) {
+              _selectors = live.get(_element);
+              live["delete"](_element);
+
+              _selectors.forEach(function (q) {
+                options.handle(_element, connected, q);
+              });
+            }
+
+          loop(_element.querySelectorAll(query), connected, query, set);
+        }
+
+        selectors = _selectors;
+        element = _element;
+      };
+
+      for (var selectors, element, i = 0, length = elements.length; i < length; i++) {
+        _loop(selectors, element, i);
+      }
+    };
+
+    var matches = function matches(element) {
+      return element.matches || element.webkitMatchesSelector || element.msMatchesSelector;
+    };
+
+    var parse = function parse(elements) {
+      var connected = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      loop(elements, connected, options.query);
+    };
+
+    var observer = new MutationObserver(callback);
+    var root = options.root || document$1;
+    var query = options.query;
+    observer.observe(root, {
+      childList: true,
+      subtree: true
+    });
+    if (query.length) parse(root.querySelectorAll(query));
+    return {
+      drop: drop,
+      flush: flush,
+      observer: observer,
+      parse: parse
+    };
+  });
+
   var Promise$1 = typeof Promise === 'function' ? Promise : function (fn) {
     var queue = [],
         resolved = 0,
@@ -1527,20 +2276,50 @@
     }
   };
 
-  var CE$1 = customElements;
-  var parse$1 = JSON.parse;
   var create$2 = Object.create,
-      defineProperty = Object.defineProperty,
       keys$2 = Object.keys;
   var cache$2 = create$2(null);
+  var strict = '"use strict;"\n';
 
   var $require = function $require(module) {
     return cache$2[module];
   };
 
-  var lib = 'uce-lib';
-  var req = 'uce-require';
-  var strict = '"use strict;"\n';
+  var asCJS = function asCJS(esm, require) {
+    var exports = [];
+    var imports = [];
+    var cjs = esm.replace(/(^|[\r\n])\s*import\s+((['|"])[^\3]+?\3)/g, function (_, $1, $2) {
+      imports.push($2.replace(/['"]/g, '').trim());
+      return $1 + 'require(' + $2 + ')';
+    }).replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
+      imports.push($3.replace(/['"]/g, '').trim());
+      return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $3 + ')';
+    }).replace(/^\s*export\s+default(\s*)/mg, 'exports.default =$1').replace(/(^|[\r\n])\s*export\s+\{([^}]+?)\}[^\n]*/g, function (_, $, $1) {
+      $1.trim().split(/\s*,\s*/).forEach(function (name) {
+        exports.push("exports.".concat(name, " = ").concat(name, ";"));
+      });
+      return $;
+    }).replace(/(^|[\r\n])\s*export\s+(const|let|var|function)(\s+)(\w+)/g, function (_, $, $1, $2, $3) {
+      exports.push("exports.".concat($3, " = ").concat($3, ";"));
+      return $ + $1 + $2 + $3;
+    }).concat('\n', exports.join('\n'));
+
+    if (require) {
+      imports.forEach(function (key) {
+        if (!(key in cache$2)) {
+          cache$2[key] = void 0;
+          all.push(load(key, key));
+        }
+      });
+      return new Promise$1(function ($) {
+        Promise$1.all(all).then(function () {
+          return $(cjs);
+        });
+      });
+    }
+
+    return cjs;
+  };
   var cjs = function cjs(extras) {
     var args = keys$2(extras || {});
     var values = args.map(function (k) {
@@ -1560,184 +2339,217 @@
       return k.length === 1 && k[0] === 'default' ? result["default"] : result;
     };
   };
-  var asCJS = function asCJS(esm) {
-    var exports = [];
-    return esm.replace(/(^|[\r\n])\s*import\s+((['|"])[^\3]+?\3)/g, function (_, $1, $2) {
-      return $1 + 'require(' + $2 + ')';
-    }).replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
-      return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $3 + ')';
-    }).replace(/^\s*export\s+default(\s*)/mg, 'exports.default =$1').replace(/(^|[\r\n])\s*export\s+\{([^}]+?)\}[^\n]*/g, function (_, $, $1) {
-      $1.trim().split(/\s*,\s*/).forEach(function (name) {
-        exports.push("exports.".concat(name, " = ").concat(name, ";"));
-      });
-      return $;
-    }).replace(/(^|[\r\n])\s*export\s+(const|let|var|function)(\s+)(\w+)/g, function (_, $, $1, $2, $3) {
-      exports.push("exports.".concat($3, " = ").concat($3, ";"));
-      return $ + $1 + $2 + $3;
-    }).concat('\n', exports.join('\n'));
-  };
-  CE$1.whenDefined(lib).then(function (uce) {
-    var all = [];
-    var loader = cjs();
+  cjs.loader = cjs();
+  if (!Promise$1.all) Promise$1.all = function (list) {
+    return new Promise$1(function ($) {
+      var length = list.length;
+      if (!length) $();
+      var i = 0;
 
-    var load = function load(module, path) {
-      return new Promise$1(function ($) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('get', path, true);
-        xhr.send(null);
+      while (i < length) {
+        list[i++].then(update);
+      }
 
-        xhr.onload = function () {
-          $(cache$2[module] = loader(xhr.responseText));
-        };
-      });
-    };
+      i = 0;
 
-    if (!Promise$1.all) Promise$1.all = function (list) {
-      return new Promise$1(function ($) {
-        var length = list.length;
-        if (!length) $();
-        var i = 0;
-
-        while (i < length) {
-          list[i++].then(update);
-        }
-
-        i = 0;
-
-        function update() {
-          if (++i === length) $();
-        }
-      });
-    };
-
-    if (!CE$1.get(req)) {
-      (uce || CE$1.get(lib)).define(req, {
-        "extends": 'script',
-        init: function init() {
-          var graph = parse$1(this.textContent.trim());
-          keys$2(graph).forEach(function (key) {
-            if (!(key in cache$2)) all.push(load(key, graph[key]));
-          });
-        }
-      });
-      defineProperty(CE$1.get(req), 'load', {
-        get: function get() {
-          return Promise$1.all(all);
-        }
-      });
-    }
-  });
-
-  customElements.whenDefined('uce-require').then(function (uce) {
-    var modules = uce || customElements.get('uce-require');
-    var reactive = stateHandler({
-      useState: useState
-    });
-    var domHandler = stateHandler({
-      dom: true,
-      useState: useState
-    });
-    var module = cjs({
-      reactive: reactive,
-      render: render,
-      html: html,
-      svg: svg
-    });
-    define('uce-template', {
-      "extends": 'template',
-      init: function init() {
-        var _ref = this.content || createContent(this.innerHTML),
-            childNodes = _ref.childNodes;
-
-        var styles = [];
-        var script = null;
-        var as = '';
-        var css = '';
-        var name = '';
-        var shadow = '';
-        var template = '';
-        modules.load.then(function () {
-          for (var i = 0; i < childNodes.length; i++) {
-            var child = childNodes[i];
-
-            if (child.nodeType === 1) {
-              var tagName = child.tagName;
-              var is = child.hasAttribute('is');
-              if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
-                if (name) throw new Error('bad template');
-                name = tagName.toLowerCase();
-                template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
-                  return '${' + $1 + '}';
-                });
-                if (is) as = child.getAttribute('is').toLowerCase();
-                if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
-              } else if (/^script$/i.test(tagName)) {
-                if (script) throw new Error('bad template');
-                script = module(child.textContent);
-              }
-            }
-          }
-
-          var selector = as ? name + '[is="' + as + '"]' : name;
-
-          for (var _i = styles.length; _i--;) {
-            var _child = styles[_i];
-            var textContent = _child.textContent;
-            if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
-              (function () {
-                var def = [];
-                css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
-                  return '\x01' + def.push($1) + ',';
-                }).split(',').map(function (s) {
-                  return s.trim() ? selector + ' ' + s.trim() : '';
-                }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
-                  return '{' + def[--$1] + '}';
-                }).replace(/(,\n)+/g, ',\n');
-              })();
-            } else css += textContent;
-          }
-
-          var params = partial(template);
-          var _script = script,
-              observedAttributes = _script.observedAttributes,
-              props = _script.props;
-          define(as || name, {
-            observedAttributes: observedAttributes,
-            style: css ? function () {
-              return css;
-            } : null,
-            "extends": as ? name : 'element',
-            attachShadow: shadow ? {
-              mode: shadow
-            } : null,
-            attributeChanged: observedAttributes && function () {
-              if (this.hasOwnProperty('attributeChanged')) this.attributeChanged();
-            },
-            connected: function connected() {
-              if (this.hasOwnProperty('connected')) this.connected();
-            },
-            disconnected: function disconnected() {
-              if (this.hasOwnProperty('disconnected')) this.connected();
-            },
-            init: function init() {
-              var self = this;
-              var html = self.html;
-              var init = true;
-              var context = null;
-              (this.render = augmentor(function () {
-                if (init) {
-                  init = false;
-                  if (props) domHandler(self, props);
-                  context = script.setup(self);
-                }
-
-                html.apply(null, params(context));
-              }))();
-            }
-          });
-        });
+      function update() {
+        if (++i === length) $();
       }
     });
+  };
+  var all = [];
+
+  var load = function load(module, path) {
+    return new Promise$1(function ($) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('get', path, true);
+      xhr.send(null);
+
+      xhr.onload = function () {
+        $(cache$2[module] = cjs.loader(xhr.responseText));
+      };
+    });
+  };
+
+  var domHandler = stateHandler({
+    dom: true,
+    useState: useState
+  });
+  var query = [];
+
+  var _QSAO = QSAO({
+    query: query,
+    handle: function handle(element, _, selector) {
+      drop([element]);
+
+      if (toBeDefined.has(selector)) {
+        var _define = toBeDefined.get(selector);
+
+        toBeDefined["delete"](selector);
+
+        _define();
+      }
+    }
+  }),
+      drop = _QSAO.drop,
+      parse$1 = _QSAO.parse;
+  var loader = cjs.loader;
+  var empty$1 = {};
+  var toBeDefined = new Map(); // preloaded imports
+
+  cache$2['@uce/reactive'] = stateHandler({
+    useState: useState
+  });
+  cache$2['augmentor'] = {
+    augmentor: augmentor,
+    useState: useState,
+    useRef: useRef,
+    useContext: useContext,
+    createContext: createContext,
+    useCallback: useCallback,
+    useMemo: useMemo,
+    useReducer: useReducer,
+    useEffect: useEffect,
+    useLayoutEffect: useLayoutEffect
+  };
+  cache$2['qsa-observer'] = QSAO;
+  cache$2['reactive-props'] = stateHandler;
+  cache$2['uce'] = {
+    define: define,
+    render: render,
+    html: html,
+    svg: svg,
+    css: css
+  };
+  define('uce-template', {
+    props: null,
+    "extends": 'template',
+    init: function init() {
+      var defineComponent = function defineComponent(content) {
+        var component = script ? loader(content) : {
+          setup: function setup() {
+            return empty$1;
+          }
+        };
+        var observedAttributes = component.observedAttributes,
+            props = component.props;
+        var params = partial(template);
+        var definition = {
+          props: null,
+          "extends": as ? name : 'element',
+          init: function init() {
+            var self = this;
+            var html = self.html;
+            var init = true;
+            var context = null;
+            (this.render = augmentor(function () {
+              if (init) {
+                init = false;
+                if (props) domHandler(self, props);
+                context = component.setup(self);
+              }
+
+              html.apply(null, params(context));
+            }))();
+          }
+        };
+        if (css) definition.style = function () {
+          return css;
+        };
+        if (shadow) definition.attachShadow = {
+          mode: shadow
+        };
+
+        if (observedAttributes) {
+          definition.observedAttributes = observedAttributes;
+
+          definition.attributeChanged = function () {
+            if (this.hasOwnProperty('attributeChanged')) this.attributeChanged.apply(this, arguments);
+          };
+        }
+
+        if (script) {
+          definition.connected = function () {
+            if (this.hasOwnProperty('connected')) this.connected();
+          };
+
+          definition.disconnected = function () {
+            if (this.hasOwnProperty('disconnected')) this.disconnected();
+          };
+        }
+
+        define(as || name, definition);
+      };
+
+      var content = this.content,
+          innerHTML = this.innerHTML,
+          ownerDocument = this.ownerDocument,
+          parentNode = this.parentNode;
+
+      var _ref = content || createContent(innerHTML),
+          childNodes = _ref.childNodes;
+
+      var styles = []; // IE11 has issues with live template elements, so this will get removed
+
+      if (parentNode && getComputedStyle(this, null).getPropertyValue('display') !== 'none') parentNode.removeChild(this);
+      var later = defineComponent;
+      var as = '';
+      var css = '';
+      var name = '';
+      var script = '';
+      var shadow = '';
+      var template = '';
+
+      for (var i = 0; i < childNodes.length; i++) {
+        var child = childNodes[i];
+
+        if (child.nodeType === 1) {
+          var tagName = child.tagName;
+          var is = child.hasAttribute('is');
+          if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
+            if (name) throw new Error('bad template');
+            name = tagName.toLowerCase();
+            template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
+              return '${' + $1 + '}';
+            });
+            if (is) as = child.getAttribute('is').toLowerCase();
+            if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
+          } else if (/^script$/i.test(tagName)) {
+            if (script) throw new Error('bad template');
+            script = child.textContent;
+
+            later = function later() {
+              asCJS(script, true).then(defineComponent);
+            };
+          }
+        }
+      }
+
+      var selector = as ? name + '[is="' + as + '"]' : name;
+
+      for (var _i = styles.length; _i--;) {
+        var _child = styles[_i];
+        var textContent = _child.textContent;
+        if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
+          (function () {
+            var def = [];
+            css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
+              return '\x01' + def.push($1) + ',';
+            }).split(',').map(function (s) {
+              return s.trim() ? selector + ' ' + s.trim() : '';
+            }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
+              return '{' + def[--$1] + '}';
+            }).replace(/(,\n)+/g, ',\n');
+          })();
+        } else css += textContent;
+      }
+
+      if (this.hasAttribute('lazy')) {
+        toBeDefined.set(selector, later);
+        query.push(selector);
+        parse$1(ownerDocument.querySelectorAll(query));
+      } else later();
+    }
   });
 
 }());

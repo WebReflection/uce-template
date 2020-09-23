@@ -6,27 +6,12 @@
 
   <title>WIP: uce-template</title>
 
-  <!-- Custom Elements polyfill compatible with builtin extends -->
-  <script defer src="js/ce.js"></script>
-
-  <!-- the bundled module -->
+  <!-- the uce-template module -->
   <script defer src="../index.js"></script>
-
-  <!-- dependencies graph to `resolve(...)` -->
-  <script type="json" is="uce-require">
-  {
-    "bundle": "js/bundle.js"
-  }
-  </script>
-
-  <style>
-  /* you know, legacy browsers */
-  template { display: none; }
-  </style>
 </head>
 <body>
   <!-- an SSR compatible way to define components -->
-  <template is="uce-template">
+  <template is="uce-template" lazy>
 
     <!--
       component template with optional shadow attribute:
@@ -45,17 +30,22 @@
     </my-counter>
 
     <!--
-      optional script with pre-defined helpers:
-        * reactive(state) helper from reactive-props/state
-        * render(...), html`...`, and svg`...` utilities from uce/uhtml
+      optional script with pre-defined modules:
+        * reactive(state) helper as '@uce/reactive' virtual module
+        * full 'uce', 'augmentor', and 'reactive-props' modules
     -->
     <script type="module">
 
-    import bundle from "bundle";
+    import reactive from '@uce/reactive';
+
+    import bundle from "js/bundle.js";
     console.log(bundle);
 
     export default {
-      // performed once, receives the current DOM element
+      // make element.text reactive
+      props: {text: ''},
+      // setup current element returning what
+      // is expected to be used in the component template
       setup: function (element) {
         var state = reactive({
           count: 0
@@ -79,8 +69,7 @@
           inc: inc,
           dec: dec
         };
-      },
-      props: {text: ''}
+      }
     };
     </script>
 
@@ -120,7 +109,7 @@
   </template>
 
   <!-- the defined components in the wild -->
-  <my-counter></my-counter>
+  <MY-COUNTER></MY-COUNTER>
   <hr>
   <my-counter></my-counter>
 
