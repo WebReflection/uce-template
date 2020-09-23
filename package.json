@@ -21,8 +21,6 @@
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "devDependencies": {
-    "@babel/core": "^7.11.6",
-    "@babel/preset-env": "^7.11.5",
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-node-resolve": "^9.0.0",
     "ascjs": "^4.0.1",
@@ -41,6 +39,8 @@
   },
   "unpkg": "min.js",
   "dependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
     "@ungap/create-content": "^0.2.0",
     "@ungap/custom-elements": "^0.1.4",
     "augmentor": "^2.2.0",
@@ -48,8 +48,8 @@
     "html-minifier-terser": "^5.1.1",
     "qsa-observer": "^1.1.5",
     "tag-params": "^1.0.6",
-    "terser": "^4.8.0",
+    "terser": "^5.3.2",
     "uce": "^1.11.2",
-    "uce-require": "0.0.13"
+    "uce-require": "0.0.15"
   }
 }

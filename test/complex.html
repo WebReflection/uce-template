@@ -46,29 +46,19 @@
       props: {text: ''},
       // setup current element returning what
       // is expected to be used in the component template
-      setup: function (element) {
-        var state = reactive({
+      setup(element) {
+        const state = reactive({
           count: 0
         });
 
-        function inc() {
-          state.count++;
-        }
+        const inc = () => { state.count++ };
+        const dec = () => { state.count-- };
 
-        function dec() {
-          state.count--;
-        }
-
-        element.connected = function () {
+        element.connected = () => {
           console.log('connected');
         };
 
-        return {
-          element: element,
-          state: state,
-          inc: inc,
-          dec: dec
-        };
+        return {element, state, inc, dec};
       }
     };
     </script>

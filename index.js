@@ -2288,13 +2288,11 @@ self.uceTemplate = (function (exports) {
   var asCJS = function asCJS(esm, require) {
     var exports = [];
     var imports = [];
-    var cjs = esm.replace(/(^|[\r\n])\s*import\s+((['|"])[^\3]+?\3)/g, function (_, $1, $2) {
-      imports.push($2.replace(/['"]/g, '').trim());
+    var cjs = esm.replace(/(^|[\r\n])\s*import\s*((['|"])[^\3]+?\3)/g, function (_, $1, $2) {
       return $1 + 'require(' + $2 + ')';
-    }).replace(/(^|[\r\n])\s*import\s+([^\3]+?)(\s+from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
-      imports.push($3.replace(/['"]/g, '').trim());
+    }).replace(/(^|[\r\n])\s*import\s*([^\3]+?)(\s+from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
       return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $3 + ')';
-    }).replace(/^\s*export\s+default(\s*)/mg, 'exports.default =$1').replace(/(^|[\r\n])\s*export\s+\{([^}]+?)\}[^\n]*/g, function (_, $, $1) {
+    }).replace(/^\s*export\s+default(\s*)/mg, 'exports.default =$1').replace(/(^|[\r\n])\s*export\s*\{([^}]+?)\}[^\n]*/g, function (_, $, $1) {
       $1.trim().split(/\s*,\s*/).forEach(function (name) {
         exports.push("exports.".concat(name, " = ").concat(name, ";"));
       });
@@ -2302,7 +2300,10 @@ self.uceTemplate = (function (exports) {
     }).replace(/(^|[\r\n])\s*export\s+(const|let|var|function)(\s+)(\w+)/g, function (_, $, $1, $2, $3) {
       exports.push("exports.".concat($3, " = ").concat($3, ";"));
       return $ + $1 + $2 + $3;
-    }).concat('\n', exports.join('\n'));
+    }).concat('\n', exports.join('\n')).replace(/require\s*\((['"])([^\1]+?)\1\s*\)/g, function ($, _, module) {
+      imports.push(module);
+      return $;
+    });
 
     if (require) {
       imports.forEach(function (key) {
