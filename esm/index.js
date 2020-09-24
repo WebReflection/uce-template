@@ -33,12 +33,6 @@ const {drop, parse} = QSAO({
 import {cache, cjs, asCJS} from 'uce-require';
 const {loader} = cjs;
 
-export const resolve = (name, module) => {
-  if (name in cache)
-    throw new Error('duplicated ' + name);
-  cache[name] = module;
-};
-
 const fallback = {setup: () => {}};
 const toBeDefined = new Map;
 const badTemplate = () => {
@@ -193,9 +187,17 @@ const Template = define('uce-template', {
   }
 });
 
-Template.resolve = resolve;
-Template.from = parts => {
+export const resolve = (name, module) => {
+  if (name in cache)
+    throw new Error('duplicated ' + name);
+  cache[name] = module;
+};
+
+export const from = parts => {
   const template = new Template;
   template.innerHTML = parts;
   return template;
 };
+
+Template.resolve = resolve;
+Template.from = from;
