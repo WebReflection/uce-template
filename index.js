@@ -2401,6 +2401,15 @@ self.uceTemplate = (function (exports) {
       drop = _QSAO.drop,
       parseQSAO = _QSAO.parse;
   var loader = cjs.loader;
+  var resolve = function resolve(name, module) {
+    if (name in cache$2) throw new Error('duplicated ' + name);
+    cache$2[name] = module;
+  };
+  var parse$1 = function parse(parts) {
+    var template = new Template();
+    template.innerHTML = parts;
+    return template;
+  };
   var fallback$1 = {
     setup: function setup() {}
   };
@@ -2567,15 +2576,6 @@ self.uceTemplate = (function (exports) {
       } else later();
     }
   });
-  var resolve = function resolve(name, module) {
-    if (name in cache$2) throw new Error('duplicated ' + name);
-    cache$2[name] = module;
-  };
-  var parse$1 = function parse(parts) {
-    var template = new Template();
-    template.innerHTML = parts;
-    return template;
-  };
   Template.resolve = resolve;
   Template.from = parse$1;
 
