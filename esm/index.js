@@ -17,7 +17,7 @@ const domHandler = stateHandler({dom: true, useState});
 
 import QSAO from 'qsa-observer';
 const query = [];
-const {drop, parse} = QSAO({
+const {drop, parse: parseQSAO} = QSAO({
   query,
   handle(element, _, selector) {
     drop([element]);
@@ -180,7 +180,7 @@ const Template = define('uce-template', {
     if (this.hasAttribute('lazy')) {
       toBeDefined.set(selector, later);
       query.push(selector);
-      parse(ownerDocument.querySelectorAll(query));
+      parseQSAO(ownerDocument.querySelectorAll(query));
     }
     else
       later();
@@ -193,11 +193,11 @@ export const resolve = (name, module) => {
   cache[name] = module;
 };
 
-export const from = parts => {
+export const parse = parts => {
   const template = new Template;
   template.innerHTML = parts;
   return template;
 };
 
 Template.resolve = resolve;
-Template.from = from;
+Template.from = parse;

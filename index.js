@@ -2399,7 +2399,7 @@ self.uceTemplate = (function (exports) {
     }
   }),
       drop = _QSAO.drop,
-      parse$1 = _QSAO.parse;
+      parseQSAO = _QSAO.parse;
   var loader = cjs.loader;
   var fallback$1 = {
     setup: function setup() {}
@@ -2563,7 +2563,7 @@ self.uceTemplate = (function (exports) {
       if (this.hasAttribute('lazy')) {
         toBeDefined.set(selector, later);
         query.push(selector);
-        parse$1(ownerDocument.querySelectorAll(query));
+        parseQSAO(ownerDocument.querySelectorAll(query));
       } else later();
     }
   });
@@ -2571,15 +2571,15 @@ self.uceTemplate = (function (exports) {
     if (name in cache$2) throw new Error('duplicated ' + name);
     cache$2[name] = module;
   };
-  var from = function from(parts) {
+  var parse$1 = function parse(parts) {
     var template = new Template();
     template.innerHTML = parts;
     return template;
   };
   Template.resolve = resolve;
-  Template.from = from;
+  Template.from = parse$1;
 
-  exports.from = from;
+  exports.parse = parse$1;
   exports.resolve = resolve;
 
   return exports;
