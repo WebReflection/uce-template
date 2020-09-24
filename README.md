@@ -190,6 +190,21 @@ The `@uce/reactive` helper makes it possible to automatically update the view wh
 
 To know more about reactive changes, please [read this Medium post](https://medium.com/@WebReflection/reactive-state-for-data-dom-78332ddafd0e).
 
+  </div>
+</details>
+
+- - -
+
+### How does it work?
+
+Based on [uce](https://github.com/WebReflection/uce#readme) and the latest [custom-elements polyfill](https://github.com/ungap/custom-elements#readme), this module glues most modern Web development patterns in a standard way that yet feels like magic.
+
+The *HTML* content of each component is handled by [tag-params](https://github.com/WebReflection/tag-params#readme) *partial* utility, while the *JS* content is normalized as lightweight *CommonJS* environment, where anyone can feed the module system as they need.
+
+As strawberry on top, *hooks* are provided behind the scene via the `@uce/reactive` utility and thanks to [augmentor](https://github.com/WebReflection/augmentor#readme).
+
+The *JS* environment is likely the most complex part to grasp though, so here some extra detail on how it works.
+
 
 #### The module JS environment
 
@@ -255,6 +270,32 @@ The **advantage** of having *lazy* modules resolution is that a component define
 
 As it is for ESM and CommonJS, every module is granted to be downloaded once and persist across multiple *imports*.
 
-  </div>
-</details>
 
+#### Inherited _µce_ features
+
+If the *default export* contains `props`, or any `onevent` handler, all the features available via *uce* will be available within the component too:
+
+```js
+export default {
+  observedAttributes: ['thing'],
+  props: {test: 'default value'},
+  onClick() {
+    console.log('click');
+  },
+  setup(element) {
+    // setup an own attributeChanged
+    element.attributeChanged = (name, oldVal, newVal) => {
+      // will log "thing" and the value
+      console.log(name, newVal);
+    };
+    // log "default value"
+    console.log(element.test);
+  }
+};
+```
+
+All `props` will automatically re-render the component, while `observedAttributes` must have an `attributeChanged` callback attached on setup.
+
+This is because the whole *render* is hooked once, and all lifecycle events will belong to it.
+
+To know more about _µce_ features, [please check its own repository](https://github.com/WebReflection/uce#readme).
