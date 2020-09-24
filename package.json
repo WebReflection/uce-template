@@ -1,6 +1,6 @@
 {
   "name": "uce-template",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "A tiny toolless library with tools included",
   "bin": "./bin/index.js",
   "main": "./cjs/index.js",
