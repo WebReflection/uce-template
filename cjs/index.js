@@ -115,6 +115,10 @@ define('uce-template', {
             this.disconnected();
         };
       }
+      for (const key in component) {
+        if (!(key in definition))
+          definition[key] = component[key];
+      }
       define(as || name, definition);
     };
 

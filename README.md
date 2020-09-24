@@ -1,11 +1,12 @@
 # <em>µ</em>ce-template
 
-A tiny toolless library with tools included.
+![green field](./test/uce-template-head.jpg)
 
-**[Live Demo](https://webreflection.github.io/uce-template/test/)**
+<sup>**Social Media Photo by [Andrew Seaman](https://unsplash.com/@amseaman) on [Unsplash](https://unsplash.com/)**</sup>
 
+A tiny toolless library with tools included. **[Live demo](https://webreflection.github.io/uce-template/test/)**
 
-### About
+- - -
 
 Inspired by [Vue 3 "_One Piece_"](https://github.com/vuejs/vue-next/releases/tag/v3.0.0), _uce-template_ provides a custom builtin `<template>` element to define components in a _Vue_ fashion.
 
@@ -31,7 +32,7 @@ Inspired by [Vue 3 "_One Piece_"](https://github.com/vuejs/vue-next/releases/tag
 </template>
 ```
 
-Add at any time this library in your page, and [see it bootstrapping](https://codepen.io/WebReflection/pen/xxVMgZx?editors=1000) all defined components.
+Add this library in the equation, and [see it bootstrapping](https://codepen.io/WebReflection/pen/xxVMgZx?editors=1000) all defined components.
 
 ```html
 <!-- the defined component -->
@@ -41,8 +42,11 @@ Add at any time this library in your page, and [see it bootstrapping](https://co
 <script async src="//unpkg.com/uce-template"></script>
 ```
 
+- - -
 
-## Features
+<details>
+  <summary><strong>Features</strong></summary>
+  <div>
 
   * **SSR** compatibility out of the box: components definitions land *once* so no duplicated templates are needed in both layout and *JS*
   * a simple **CLI** that converts any html page or component into its minified version and, optionally, *Babel* transpilation
@@ -51,10 +55,14 @@ Add at any time this library in your page, and [see it bootstrapping](https://co
   * optionally **shadow**ed `<custom-element shadow>` components, and optionally shadowed `<style shadow>` styles
   * a variety of pre-defined modules to import, including a virtual `@uce/reactive` module, to create reactive *UIs*
   * a runtime *ESM -> CommonJS* **module** system, where relative dependencies are [resolved (once) lazily](#the-lazy-js-environment), but any imported [module can be pre-defined](#the-module-js-environment) through the `resolve(name, module)` exported utility
-  * everything pre-bundled within *10K* gzipped budget, or *9K* via brotli: one library for thousand portable use cases 🦄
+  * everything pre-bundled fits into *10K* gzipped budget, or *9K* via brotli 🦄
 
+  </div>
+</details>
 
-### CLI
+<details>
+  <summary><strong>CLI</strong></summary>
+  <div>
 
 While it's suggested to install the *CLI* globally, due some not-super-light dependency, it's still an `npx` command away:
 
@@ -71,8 +79,12 @@ cat my-component.html | uce-template
 
 That's it, but of course we should be sure that produced layout still works as expected 👍
 
+  </div>
+</details>
 
-### <template>
+<details>
+  <summary><strong>&lt;template&gt;</strong></summary>
+  <div>
 
 Any template that extends `uce-template` *must* contain at least a custom element in it, either regular, or built-in extend:
 
@@ -94,8 +106,12 @@ Any template that extends `uce-template` *must* contain at least a custom elemen
 
 Any template *might* contain a single `<script>` tag, and/or one or more `<style>` definitions.
 
+  </div>
+</details>
 
-### <custom-element>
+<details>
+  <summary><strong>&lt;custom-element&gt;</strong></summary>
+  <div>
 
 Each "*component*" might define itself with, or without, its own static, or dynamic, content.
 
@@ -126,8 +142,12 @@ Regarding **ShadowDOM**, its polyfill is not included in this project but it's p
 
 The `shadow` attribute is `open` by default, but it can also be specified as `shadow=closed`.
 
+  </div>
+</details>
 
-### <style>
+<details>
+  <summary><strong>&lt;style&gt;</strong></summary>
+  <div>
 
 A component can have *one or more* styles in it, within a specific *scope*:
 
@@ -137,8 +157,12 @@ A component can have *one or more* styles in it, within a specific *scope*:
 
 There is nothing special to consider here, except that *global* styles might interfere with *IE11* if too obtrusive, as once again *IE11* doesn't understand the `<template>` element purpose and behavior.
 
+  </div>
+</details>
 
-### <script type="module">
+<details>
+  <summary><strong>&lt;script&gt;</strong></summary>
+  <div>
 
 A definition can contain only *one script tag* in it, and such *script* will be virtually handled like a *module*.
 
@@ -230,3 +254,7 @@ It is *our duty* to be sure that lazily loaded modules can run within our target
 The **advantage** of having *lazy* modules resolution is that a component defined via `<template is="uce-template" lazy>` will *not* need to have all dependencies pre-defined/resolved, and it *will* download once these only when any instance of such component is spot live.
 
 As it is for ESM and CommonJS, every module is granted to be downloaded once and persist across multiple *imports*.
+
+  </div>
+</details>
+

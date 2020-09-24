@@ -2493,6 +2493,10 @@ self.uceTemplate = (function (exports) {
           };
         }
 
+        for (var key in component) {
+          if (!(key in definition)) definition[key] = component[key];
+        }
+
         define(as || name, definition);
       };
 
