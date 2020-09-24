@@ -50,10 +50,11 @@ Add at any time this library in your page, and [see it bootstrapping](https://co
   * optionally **lazy** `<template lazy>` component, to resolve their definition only when live
   * optionally **shadow**ed `<custom-element shadow>` components, and optionally shadowed `<style shadow>` styles
   * a variety of pre-defined modules to import, including a virtual `@uce/reactive` module, to create reactive *UIs*
-  * a runtime *ESM -> CommonJS* **module** system, where relative dependencies are resolved (once) lazily, but any imported module can be pre-defined through the `resolve(name, module)` exported utility
+  * a runtime *ESM -> CommonJS* **module** system, where relative dependencies are [resolved (once) lazily](#the-lazy-js-environment), but any imported [module can be pre-defined](#the-module-js-environment) through the `resolve(name, module)` exported utility
+  * everything pre-bundled within *10K* gzipped budget, or *9K* via brotli: one library for thousand portable use cases 🦄
 
 
-#### CLI
+### CLI
 
 While it's suggested to install the *CLI* globally, due some not-super-light dependency, it's still an `npx` command away:
 
@@ -71,8 +72,7 @@ cat my-component.html | uce-template
 That's it, but of course we should be sure that produced layout still works as expected 👍
 
 
-
-#### <template>
+### <template>
 
 Any template that extends `uce-template` *must* contain at least a custom element in it, either regular, or built-in extend:
 
@@ -95,7 +95,7 @@ Any template that extends `uce-template` *must* contain at least a custom elemen
 Any template *might* contain a single `<script>` tag, and/or one or more `<style>` definitions.
 
 
-#### <custom-element>
+### <custom-element>
 
 Each "*component*" might define itself with, or without, its own static, or dynamic, content.
 
@@ -127,7 +127,18 @@ Regarding **ShadowDOM**, its polyfill is not included in this project but it's p
 The `shadow` attribute is `open` by default, but it can also be specified as `shadow=closed`.
 
 
-#### <script type="module">
+### <style>
+
+A component can have *one or more* styles in it, within a specific *scope*:
+
+  * a generic `<style>` will apply its content globally, useful to address `my-counter + my-counter {...}` cases, as example
+  * a `<style scoped>` will apply its content prefixed with the Custom Element name (i.e. `my-counter span, my-counter button {...}`)
+  * a `<style shadow>` will apply its content on top of the *shadowRoot*, assuming the component is defined with a `shadow` attribute
+
+There is nothing special to consider here, except that *global* styles might interfere with *IE11* if too obtrusive, as once again *IE11* doesn't understand the `<template>` element purpose and behavior.
+
+
+### <script type="module">
 
 A definition can contain only *one script tag* in it, and such *script* will be virtually handled like a *module*.
 
@@ -154,17 +165,6 @@ export default {
 The `@uce/reactive` helper makes it possible to automatically update the view whenever one of its properties changes.
 
 To know more about reactive changes, please [read this Medium post](https://medium.com/@WebReflection/reactive-state-for-data-dom-78332ddafd0e).
-
-
-#### <style>
-
-A component can have *one or more* styles in it, within a specific *scope*:
-
-  * a generic `<style>` will apply its content globally, useful to address `my-counter + my-counter {...}` cases, as example
-  * a `<style scoped>` will apply its content prefixed with the Custom Element name (i.e. `my-counter span, my-counter button {...}`)
-  * a `<style shadow>` will apply its content on top of the *shadowRoot*, assuming the component is defined with a `shadow` attribute
-
-There is nothing special to consider here, except that *global* styles might interfere with *IE11* if too obtrusive, as once again *IE11* doesn't understand the `<template>` element purpose and behavior.
 
 
 #### The module JS environment
