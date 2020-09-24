@@ -3,7 +3,7 @@
 'use strict';
 
 const {existsSync, readFileSync, writeFileSync} = require('fs');
-const {resolve} = require('path');
+const {join, resolve} = require('path');
 
 const {minify} = require('html-minifier-terser');
 const {minify: terser} = require('terser');
@@ -23,8 +23,11 @@ for (let {argv} = process, i = 2, {length} = argv; i < length; i++) {
     switch (key) {
       case '-h':
       case '--help':
+        let version = '';
+        try { version = require(join(__dirname, '..', 'package.json')).version }
+        catch (o_O) {}
         console.log('');
-        console.log(' \x1b[1muce-template\x1b[0m');
+        console.log(' \x1b[1muce-template\x1b[0m v' + version);
         console.log(' \x1b[2mhttps://github.com/webreflection/uce-template\x1b[0m');
         console.log('');
         console.log(' \x1b[4musage\x1b[0m');

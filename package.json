@@ -1,7 +1,7 @@
 {
   "name": "uce-template",
   "version": "0.0.8",
-  "description": "WIP - a Vue 3 inspired concept based on Custom Elements",
+  "description": "A tiny toolless library with tools included",
   "bin": "./bin/index.js",
   "main": "./cjs/index.js",
   "scripts": {
@@ -50,6 +50,6 @@
     "tag-params": "^1.0.6",
     "terser": "^5.3.2",
     "uce": "^1.11.2",
-    "uce-require": "0.0.15"
+    "uce-require": "^0.1.0"
   }
 }

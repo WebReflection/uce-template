@@ -2404,8 +2404,15 @@ self.uceTemplate = (function (exports) {
     if (name in cache$2) throw new Error('duplicated ' + name);
     cache$2[name] = module;
   };
-  var empty$1 = {};
-  var toBeDefined = new Map(); // preloaded imports
+  var fallback$1 = {
+    setup: function setup() {}
+  };
+  var toBeDefined = new Map();
+
+  var badTemplate = function badTemplate() {
+    throw new Error('bad template');
+  }; // preloaded imports
+
 
   resolve('@uce/reactive', stateHandler({
     useState: useState
@@ -2437,11 +2444,8 @@ self.uceTemplate = (function (exports) {
     props: null,
     init: function init() {
       var defineComponent = function defineComponent(content) {
-        var component = script ? loader(content) : {
-          setup: function setup() {
-            return empty$1;
-          }
-        };
+        var component = script ? loader(content) : fallback$1;
+        var setup = component.setup || fallback$1.setup;
         var observedAttributes = component.observedAttributes,
             props = component.props;
         var params = partial(template);
@@ -2457,7 +2461,7 @@ self.uceTemplate = (function (exports) {
               if (init) {
                 init = false;
                 if (props) domHandler(self, props);
-                context = component.setup(self);
+                context = setup.call(component, self) || {};
               }
 
               html.apply(null, params(context));
@@ -2517,7 +2521,7 @@ self.uceTemplate = (function (exports) {
           var tagName = child.tagName;
           var is = child.hasAttribute('is');
           if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
-            if (name) throw new Error('bad template');
+            if (name) badTemplate();
             name = tagName.toLowerCase();
             template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
               return '${' + $1 + '}';
@@ -2525,7 +2529,7 @@ self.uceTemplate = (function (exports) {
             if (is) as = child.getAttribute('is').toLowerCase();
             if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
           } else if (/^script$/i.test(tagName)) {
-            if (script) throw new Error('bad template');
+            if (script) badTemplate();
             script = child.textContent;
 
             later = function later() {
@@ -2536,6 +2540,7 @@ self.uceTemplate = (function (exports) {
       }
 
       var selector = as ? name + '[is="' + as + '"]' : name;
+      if (!selector) badTemplate();
 
       for (var _i = styles.length; _i--;) {
         var _child = styles[_i];
@@ -2561,6 +2566,7 @@ self.uceTemplate = (function (exports) {
       } else later();
     }
   });
+  customElements.get('uce-template').resolve = resolve;
 
   exports.resolve = resolve;
 

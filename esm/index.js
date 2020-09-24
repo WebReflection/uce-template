@@ -39,8 +39,11 @@ export const resolve = (name, module) => {
   cache[name] = module;
 };
 
-const empty = {};
+const fallback = {setup: () => {}};
 const toBeDefined = new Map;
+const badTemplate = () => {
+  throw new Error('bad template');
+};
 
 // preloaded imports
 resolve('@uce/reactive', stateHandler({useState}));
@@ -61,7 +64,8 @@ define('uce-template', {
   props: null,
   init() {
     const defineComponent = content => {
-      const component = script ? loader(content) : {setup: () => empty};
+      const component = script ? loader(content) : fallback;
+      const setup = component.setup || fallback.setup;
       const {observedAttributes, props} = component;
       const params = partial(template);
       const definition = {
@@ -77,7 +81,7 @@ define('uce-template', {
               init = false;
               if (props)
                 domHandler(self, props);
-              context = component.setup(self);
+              context = setup.call(component, self) || {};
             }
             html.apply(null, params(context));
           }))();
@@ -131,7 +135,7 @@ define('uce-template', {
           styles.push(child);
         else if (is || /-/i.test(tagName)) {
           if (name)
-            throw new Error('bad template');
+            badTemplate();
           name = tagName.toLowerCase();
           template = child.innerHTML.replace(
                       /\{\{([^\2]+?)(\}\})/g,
@@ -144,7 +148,7 @@ define('uce-template', {
         }
         else if (/^script$/i.test(tagName)) {
           if (script)
-            throw new Error('bad template');
+            badTemplate();
           script = child.textContent;
           later = () => {
             asCJS(script, true).then(defineComponent);
@@ -153,6 +157,8 @@ define('uce-template', {
       }
     }
     const selector = as ? (name + '[is="' + as + '"]') : name;
+    if (!selector)
+      badTemplate();
     for (let i = styles.length; i--;) {
       const child = styles[i];
       const {textContent} = child;
@@ -182,3 +188,5 @@ define('uce-template', {
       later();
   }
 });
+
+customElements.get('uce-template').resolve = resolve;
