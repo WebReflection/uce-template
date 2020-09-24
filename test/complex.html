@@ -10,7 +10,11 @@
   <script defer src="../index.js"></script>
 </head>
 <body>
-  <!-- an SSR compatible way to define components -->
+  <!--
+    An SSR compatible way to define components
+    with an optional lazy attribute to define
+    components only once encountered live
+  -->
   <template is="uce-template" lazy>
 
     <!--
@@ -27,6 +31,10 @@
       <button onclick={{inc}}>
         +
       </button>
+      <pre>
+This is
+a test
+      </pre>
     </my-counter>
 
     <!--

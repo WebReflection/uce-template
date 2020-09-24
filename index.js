@@ -2221,7 +2221,7 @@ self.uceTemplate = (function (exports) {
               });
             }
 
-          loop(_element.querySelectorAll(query), connected, query, set);
+          loop(querySelectorAll(_element), connected, query, set);
         }
 
         selectors = _selectors;
@@ -2242,6 +2242,10 @@ self.uceTemplate = (function (exports) {
       loop(elements, connected, options.query);
     };
 
+    var querySelectorAll = function querySelectorAll(root) {
+      return query.length ? root.querySelectorAll(query) : query;
+    };
+
     var observer = new MutationObserver(callback);
     var root = options.root || document$1;
     var query = options.query;
@@ -2249,7 +2253,7 @@ self.uceTemplate = (function (exports) {
       childList: true,
       subtree: true
     });
-    if (query.length) parse(root.querySelectorAll(query));
+    parse(querySelectorAll(root));
     return {
       drop: drop,
       flush: flush,
@@ -2387,6 +2391,7 @@ self.uceTemplate = (function (exports) {
         var _define = toBeDefined.get(selector);
 
         toBeDefined["delete"](selector);
+        query.splice(query.indexOf(selector), 1);
 
         _define();
       }
@@ -2395,13 +2400,17 @@ self.uceTemplate = (function (exports) {
       drop = _QSAO.drop,
       parse$1 = _QSAO.parse;
   var loader = cjs.loader;
+  var resolve = function resolve(name, module) {
+    if (name in cache$2) throw new Error('duplicated ' + name);
+    cache$2[name] = module;
+  };
   var empty$1 = {};
   var toBeDefined = new Map(); // preloaded imports
 
-  cache$2['@uce/reactive'] = stateHandler({
+  resolve('@uce/reactive', stateHandler({
     useState: useState
-  });
-  cache$2['augmentor'] = {
+  }));
+  resolve('augmentor', {
     augmentor: augmentor,
     useState: useState,
     useRef: useRef,
@@ -2412,19 +2421,20 @@ self.uceTemplate = (function (exports) {
     useReducer: useReducer,
     useEffect: useEffect,
     useLayoutEffect: useLayoutEffect
-  };
-  cache$2['qsa-observer'] = QSAO;
-  cache$2['reactive-props'] = stateHandler;
-  cache$2['uce'] = {
+  });
+  resolve('qsa-observer', QSAO);
+  resolve('reactive-props', stateHandler);
+  resolve('uce', {
     define: define,
     render: render,
     html: html,
     svg: svg,
     css: css
-  };
+  }); // <template is="uce-template" />
+
   define('uce-template', {
-    props: null,
     "extends": 'template',
+    props: null,
     init: function init() {
       var defineComponent = function defineComponent(content) {
         var component = script ? loader(content) : {
@@ -2483,16 +2493,15 @@ self.uceTemplate = (function (exports) {
       };
 
       var content = this.content,
-          innerHTML = this.innerHTML,
           ownerDocument = this.ownerDocument,
           parentNode = this.parentNode;
 
-      var _ref = content || createContent(innerHTML),
+      var _ref = content || createContent(this.innerHTML),
           childNodes = _ref.childNodes;
 
-      var styles = []; // IE11 has issues with live template elements, so this will get removed
+      var styles = []; // drop this element in IE11before its content is live
 
-      if (parentNode && getComputedStyle(this, null).getPropertyValue('display') !== 'none') parentNode.removeChild(this);
+      if (parentNode && this instanceof HTMLUnknownElement) parentNode.removeChild(this);
       var later = defineComponent;
       var as = '';
       var css = '';
@@ -2552,10 +2561,6 @@ self.uceTemplate = (function (exports) {
       } else later();
     }
   });
-  var resolve = function resolve(name, module) {
-    if (name in cache$2) throw new Error('duplicated ' + name);
-    cache$2[name] = module;
-  };
 
   exports.resolve = resolve;
 

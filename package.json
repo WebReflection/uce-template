@@ -46,7 +46,7 @@
     "augmentor": "^2.2.0",
     "csso": "^4.0.3",
     "html-minifier-terser": "^5.1.1",
-    "qsa-observer": "^1.1.5",
+    "qsa-observer": "^1.1.6",
     "tag-params": "^1.0.6",
     "terser": "^5.3.2",
     "uce": "^1.11.2",

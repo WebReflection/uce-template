@@ -72,9 +72,9 @@ for (let {argv} = process, i = 2, {length} = argv; i < length; i++) {
 const scripts = [];
 
 const options = {
+  preserveLineBreaks: true,
   collapseBooleanAttributes: true,
   collapseWhitespace: true,
-  preserveLineBreaks: true,
   html5: true,
   keepClosingSlash: true,
   removeAttributeQuotes: true,
@@ -106,7 +106,7 @@ while (match = re.exec(outcome)) {
         presets: ['@babel/preset-env']
       })
       .code.trim()
-      .replace(/^(['"])use strict\1;/gm, '')
+      .replace(/^(['"])use strict\1;/gm, '').trim()
     ;
     terser(text, {mangle: {toplevel: true}, format: {semicolons: false}})
       .then(({code}) => {

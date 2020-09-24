@@ -24,6 +24,7 @@ const {drop, parse} = QSAO({
     if (toBeDefined.has(selector)) {
       const define = toBeDefined.get(selector);
       toBeDefined.delete(selector);
+      query.splice(query.indexOf(selector), 1);
       define();
     }
   }
@@ -32,25 +33,32 @@ const {drop, parse} = QSAO({
 import {cache, cjs, asCJS} from 'uce-require';
 const {loader} = cjs;
 
+export const resolve = (name, module) => {
+  if (name in cache)
+    throw new Error('duplicated ' + name);
+  cache[name] = module;
+};
+
 const empty = {};
 const toBeDefined = new Map;
 
 // preloaded imports
-cache['@uce/reactive'] = stateHandler({useState});
-cache['augmentor'] = {
+resolve('@uce/reactive', stateHandler({useState}));
+resolve('augmentor', {
   augmentor,
   useState, useRef,
   useContext, createContext,
   useCallback, useMemo, useReducer,
   useEffect, useLayoutEffect
-};
-cache['qsa-observer'] = QSAO;
-cache['reactive-props'] = stateHandler;
-cache['uce'] = {define, render, html, svg, css};
+});
+resolve('qsa-observer', QSAO);
+resolve('reactive-props', stateHandler);
+resolve('uce', {define, render, html, svg, css});
 
+// <template is="uce-template" />
 define('uce-template', {
-  props: null,
   extends: 'template',
+  props: null,
   init() {
     const defineComponent = content => {
       const component = script ? loader(content) : {setup: () => empty};
@@ -98,12 +106,15 @@ define('uce-template', {
       }
       define(as || name, definition);
     };
-    const {content, innerHTML, ownerDocument, parentNode} = this;
-    const {childNodes} = content || createContent(innerHTML);
+
+    const {content, ownerDocument, parentNode} = this;
+    const {childNodes} = content || createContent(this.innerHTML);
     const styles = [];
-    // IE11 has issues with live template elements, so this will get removed
-    if (parentNode && getComputedStyle(this, null).getPropertyValue('display') !== 'none')
+
+    // drop this element in IE11before its content is live
+    if (parentNode && this instanceof HTMLUnknownElement)
       parentNode.removeChild(this);
+
     let later = defineComponent;
     let as = '';
     let css = '';
@@ -171,9 +182,3 @@ define('uce-template', {
       later();
   }
 });
-
-export const resolve = (name, module) => {
-  if (name in cache)
-    throw new Error('duplicated ' + name);
-  cache[name] = module;
-};
