@@ -193,4 +193,10 @@ define('uce-template', {
   }
 });
 
-customElements.get('uce-template').resolve = resolve;
+const Template = customElements.get('uce-template');
+Template.resolve = resolve;
+Template.from = parts => {
+  const template = new Template;
+  template.innerHTML = parts;
+  return template;
+};

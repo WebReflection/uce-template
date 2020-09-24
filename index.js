@@ -2570,7 +2570,14 @@ self.uceTemplate = (function (exports) {
       } else later();
     }
   });
-  customElements.get('uce-template').resolve = resolve;
+  var Template = customElements.get('uce-template');
+  Template.resolve = resolve;
+
+  Template.from = function (parts) {
+    var template = new Template();
+    template.innerHTML = parts;
+    return template;
+  };
 
   exports.resolve = resolve;
 
