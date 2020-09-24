@@ -57,6 +57,13 @@ Add this library in the equation, and [see it bootstrapping](https://codepen.io/
   * a runtime *ESM -> CommonJS* **module** system, where relative dependencies are [resolved (once) lazily](#the-lazy-js-environment), but any imported [module can be pre-defined](#the-module-js-environment) through the `resolve(name, module)` exported utility
   * everything pre-bundled fits into *10K* gzipped budget, or *9K* via brotli 🦄
 
+#### Goals
+
+  * demonstrate that tools and tooling can be optional, thanks to the current state of the *Web*
+  * avoid any debate regarding duplicated code and re-hydration cost: each component can be served through static pages or dynamic *SSR*, without needing duplicated code around
+  * being ahead of time providing the long discussed partial templates already, improving the previous *HTML Imports* idea, which has been dropped anyway, and simplifying scoped styles via auto prefixes or shadow dom
+  * being extremely developer friendly with a script anyone can add on any page to start with, with the optional tooling offered by the module itself to optimize stand alone components, or even whole *HTML* pages
+
   </div>
 </details>
 
