@@ -2420,9 +2420,29 @@ self.uceTemplate = (function (exports) {
   }; // preloaded imports
 
 
-  resolve('@uce/reactive', stateHandler({
-    useState: useState
-  }));
+  var virtualNameSpace = {
+    define: define,
+    render: render,
+    html: html,
+    svg: svg,
+    css: css,
+    reactive: stateHandler({
+      useState: useState
+    }),
+    slot: function slot(element) {
+      return [].reduce.call(element.querySelectorAll('[slot]'), function (slot, node) {
+        slot[node.getAttribute('slot')] = node;
+        return slot;
+      }, {});
+    }
+  }; // deprecated? namespace
+
+  resolve('@uce/reactive', virtualNameSpace.reactive);
+  resolve('@uce/slot', virtualNameSpace.slot); // virtual namespace
+
+  resolve('@uce', virtualNameSpace);
+  resolve('uce', virtualNameSpace); // extra/useful modules
+
   resolve('augmentor', {
     augmentor: augmentor,
     useState: useState,
@@ -2436,14 +2456,7 @@ self.uceTemplate = (function (exports) {
     useLayoutEffect: useLayoutEffect
   });
   resolve('qsa-observer', QSAO);
-  resolve('reactive-props', stateHandler);
-  resolve('uce', {
-    define: define,
-    render: render,
-    html: html,
-    svg: svg,
-    css: css
-  }); // <template is="uce-template" />
+  resolve('reactive-props', stateHandler); // <template is="uce-template" />
 
   var Template = define('uce-template', {
     "extends": 'template',

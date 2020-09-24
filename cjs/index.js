@@ -60,7 +60,28 @@ const badTemplate = () => {
 };
 
 // preloaded imports
-resolve('@uce/reactive', stateHandler({useState}));
+const virtualNameSpace = {
+  define, render, html, svg, css,
+  reactive: stateHandler({useState}),
+  slot: element => [].reduce.call(
+    element.querySelectorAll('[slot]'),
+    (slot, node) => {
+      slot[node.getAttribute('slot')] = node;
+      return slot;
+    },
+    {}
+  )
+};
+
+// deprecated? namespace
+resolve('@uce/reactive', virtualNameSpace.reactive);
+resolve('@uce/slot', virtualNameSpace.slot);
+
+// virtual namespace
+resolve('@uce', virtualNameSpace);
+resolve('uce', virtualNameSpace);
+
+// extra/useful modules
 resolve('augmentor', {
   augmentor,
   useState, useRef,
@@ -70,7 +91,6 @@ resolve('augmentor', {
 });
 resolve('qsa-observer', QSAO);
 resolve('reactive-props', stateHandler);
-resolve('uce', {define, render, html, svg, css});
 
 // <template is="uce-template" />
 const Template = define('uce-template', {
