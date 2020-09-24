@@ -2076,6 +2076,7 @@ self.uceTemplate = (function (exports) {
       e: e
     });
     if (style) document.head.appendChild(el('style')).textContent = style(e === element ? tagName : e + '[is="' + tagName + '"]');
+    return MicroElement;
   };
   /* istanbul ignore else */
 
@@ -2439,7 +2440,7 @@ self.uceTemplate = (function (exports) {
     css: css
   }); // <template is="uce-template" />
 
-  define('uce-template', {
+  var Template = define('uce-template', {
     "extends": 'template',
     props: null,
     init: function init() {
@@ -2570,7 +2571,6 @@ self.uceTemplate = (function (exports) {
       } else later();
     }
   });
-  var Template = customElements.get('uce-template');
   Template.resolve = resolve;
 
   Template.from = function (parts) {

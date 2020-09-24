@@ -66,7 +66,7 @@ resolve('reactive-props', stateHandler);
 resolve('uce', {define, render, html, svg, css});
 
 // <template is="uce-template" />
-define('uce-template', {
+const Template = define('uce-template', {
   extends: 'template',
   props: null,
   init() {
@@ -200,7 +200,6 @@ define('uce-template', {
   }
 });
 
-const Template = customElements.get('uce-template');
 Template.resolve = resolve;
 Template.from = parts => {
   const template = new Template;
