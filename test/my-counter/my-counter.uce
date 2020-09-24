@@ -9,7 +9,7 @@
 </my-counter>
 
 <script type="module">
-  import reactive from "@uce/reactive";
+  import {reactive} from "@uce";
   export default {
     setup(element) {
       const state = reactive({ count: 0 });
