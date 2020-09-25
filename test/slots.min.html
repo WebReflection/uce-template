@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+<meta charset=UTF-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>uce-template slots</title>
+<script defer src=../index.js></script>
+</head>
+<body>
+<p>
+Original example <a href=https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_templates_and_slots>@MDN</a>
+</p>
+<hr>
+<element-details>
+<span slot=name>slot</span>
+<span slot=description>A placeholder inside a web component that users can fill with their own markup, with the effect of composing different DOM trees together.</span>
+<dl slot=attributes>
+<dt>name</dt>
+<dd>The name of the slot.</dd>
+</dl>
+</element-details>
+<element-details>
+<span slot=name>template</span>
+<span slot=description>A mechanism for holding client- side content that is not to be rendered when a page is loaded but may subsequently be instantiated during runtime using JavaScript.</span>
+</element-details>
+<template is=uce-template>
+<style scoped>details{font-family:"Open Sans Light",Helvetica,Arial}.name{font-weight:700;color:#217ac0;font-size:120%}h4{margin:10px 0 -8px}h4 span{background:#217ac0;padding:2px 6px;border:1px solid #cee9f9;border-radius:4px;color:#fff}.attributes{margin-left:22px;font-size:90%}.attributes p{margin-left:16px;font-style:italic}</style>
+<element-details>
+<summary>
+<span>
+<code class=name>&lt;{{slot.name}}&gt;</code>
+<i class=desc>{{slot.description}}</i>
+</span>
+</summary>
+<div class=attributes>
+<h4><span>Attributes</span></h4>
+{{slot.attributes || html`<p>None</p>`}}
+</div>
+<hr>
+</element-details>
+<script type=module>import{html as t,slot as e}from"@uce"
+export default{setup:o=>({html:t,slot:e(o)})}
+</script>
+
+</template>
+</body>
+</html>

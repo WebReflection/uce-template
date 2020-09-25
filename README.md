@@ -53,7 +53,7 @@ Add this library in the equation, and [see it bootstrapping](https://codepen.io/
   * **Custom Elements** based, including builtin extends, so that *IE11*, *Safari*, or any other browser, will work right away
   * optionally **lazy** `<template lazy>` component, to resolve their definition only when live
   * optionally **shadow**ed `<custom-element shadow>` components, and optionally shadowed `<style shadow>` styles
-  * a variety of pre-defined modules to import, including a virtual `@uce/reactive` module, to create reactive *UIs*
+  * a variety of pre-defined modules to import, including a virtual `@uce` module, to create reactive *UIs* and more
   * a runtime *ESM -> CommonJS* **module** system, where relative dependencies are [resolved (once) lazily](#the-lazy-js-environment), but any imported [module can be pre-defined](#the-module-js-environment) through the `resolve(name, module)` exported utility
   * everything pre-bundled fits into *10K* gzipped budget, or *9K* via brotli 🦄
 
@@ -112,6 +112,13 @@ Any template that extends `uce-template` *must* contain at least a custom elemen
 ```
 
 Any template *might* contain a single `<script>` tag, and/or one or more `<style>` definitions.
+
+
+#### &lt;slot&gt;
+
+If a component contains `{{slot.name}}` definitions, nodes from the living *HTML*, before the component gets upgraded, will be placed in there once live.
+
+See this [live example](https://codepen.io/WebReflection/pen/OJNdZPB?editors=1000) to understand more.
 
   </div>
 </details>
@@ -181,7 +188,7 @@ The script *might* contain a `default export`, or even a `module.exports = ...`,
 
 ```html
 <script type="module">
-import reactive from '@uce/reactive';
+import {reactive} from '@uce';
 export default {
   setup(element) {
     const state = reactive({ count: 0 });
@@ -193,7 +200,7 @@ export default {
 </script>
 ```
 
-The `@uce/reactive` helper makes it possible to automatically update the view whenever one of its properties changes.
+The `@uce` *reactive* helper makes it possible to automatically update the view whenever one of its properties changes.
 
 To know more about reactive changes, please [read this Medium post](https://medium.com/@WebReflection/reactive-state-for-data-dom-78332ddafd0e).
 

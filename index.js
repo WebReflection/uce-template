@@ -2295,8 +2295,8 @@ self.uceTemplate = (function (exports) {
     var imports = [];
     var cjs = esm.replace(/(^|[\r\n])\s*import\s*((['|"])[^\3]+?\3)/g, function (_, $1, $2) {
       return $1 + 'require(' + $2 + ')';
-    }).replace(/(^|[\r\n])\s*import\s*([^\3]+?)(\s+from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
-      return $1 + 'const ' + $2.replace(/\s+as\s+/g, ': ') + ' = require(' + $3 + ')';
+    }).replace(/(^|[\r\n])\s*import\s*([^\3]+?)(\s*from\s*)((['|"])[^\5]+?\5)/g, function (_, $1, $2, $, $3) {
+      return $1 + 'const ' + $2.replace(/\s+as\s+/g, ':') + ' = require(' + $3 + ')';
     }).replace(/^\s*export\s+default(\s*)/mg, 'exports.default =$1').replace(/(^|[\r\n])\s*export\s*\{([^}]+?)\}[^\n]*/g, function (_, $, $1) {
       $1.trim().split(/\s*,\s*/).forEach(function (name) {
         exports.push("exports.".concat(name, " = ").concat(name, ";"));
