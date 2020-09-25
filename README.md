@@ -203,7 +203,7 @@ To know more about reactive changes, please [read this Medium post](https://medi
 
 - - -
 
-## Examples
+## How to / Examples
 
 This section goal is to showcase basic to complex examples via *uce-template*, where some example might use the `.uce` extension to confine components within their own files.
 
@@ -358,15 +358,17 @@ Using this technique, our *JS* payload per page would be now reduced to less tha
 
 
 <details>
-  <summary><strong>CSP &amp; integrity</strong></summary>
+  <summary><strong>CSP &amp; integrity/nonce</strong></summary>
   <div>
 
 Since `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *requires*, the latest *integrity* value can be found in here:
 
 ```html
-<script src="/js/uce-template.js"
+<script src="https://unpkg.com/uce-template"
         integrity="nXFcDzF++3jp1t0cHwxof4iFavx+BMzwV+rwE7LXwYSQFvI+RmYYzT/vtPI3KUpr"
-        crossorigin="anonymous"></script>
+        nonce="nXFcDzF++3jp1t0cHwxof4iFavx+BMzwV+rwE7LXwYSQFvI+RmYYzT/vtPI3KUpr"
+        crossorigin="anonymous">
+</script>
 ```
 
 Please note that this integrity **changes on every release** so please be sure you have the latest version (this README reflects the latest).
