@@ -2563,7 +2563,7 @@ self.uceTemplate = (function (exports) {
       }
 
       var selector = as ? name + '[is="' + as + '"]' : name;
-      if (!selector) badTemplate();
+      if (!selector) return;
 
       for (var _i = styles.length; _i--;) {
         var _child = styles[_i];

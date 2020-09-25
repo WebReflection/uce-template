@@ -188,7 +188,7 @@ const Template = define('uce-template', {
     }
     const selector = as ? (name + '[is="' + as + '"]') : name;
     if (!selector)
-      badTemplate();
+      return;
     for (let i = styles.length; i--;) {
       const child = styles[i];
       const {textContent} = child;

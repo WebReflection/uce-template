@@ -211,7 +211,7 @@ To know more about reactive changes, please [read this Medium post](https://medi
 
 ## Examples
 
-This section goal is to showcase most basic to more complex examples via *uce-template* where some example might use the `.uce` extension to confine components within their own file.
+This section goal is to showcase basic to complex examples via *uce-template*, where some example might use the `.uce` extension to confine components within their own files.
 
 If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *Open Settings (JSON)*, and add the following to such file in order to highlight `.uce` files as *HTML*:
 
@@ -224,6 +224,8 @@ If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *
   }
 }
 ```
+
+#### ... coming soon ...
 
 - - -
 
