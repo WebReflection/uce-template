@@ -1,5 +1,4 @@
 import '@ungap/custom-elements';
-import createContent from '@ungap/create-content';
 
 import {
   augmentor,
@@ -32,6 +31,10 @@ const {drop, parse: parseQSAO} = QSAO({
 
 import {cache, cjs, asCJS} from 'uce-require';
 const {loader} = cjs;
+
+// Note: rollup breaks es.js if this is imported elsewhere
+//       ... don't ask ...
+import createContent from '@ungap/create-content';
 
 export const resolve = (name, module) => {
   if (name in cache)

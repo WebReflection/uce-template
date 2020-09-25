@@ -1,6 +1,5 @@
 'use strict';
 require('@ungap/custom-elements');
-const createContent = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('@ungap/create-content'));
 
 const {
   augmentor,
@@ -38,6 +37,10 @@ const {drop, parse: parseQSAO} = QSAO({
 
 const {cache, cjs, asCJS} = require('uce-require');
 const {loader} = cjs;
+
+// Note: rollup breaks es.js if this is imported elsewhere
+//       ... don't ask ...
+const createContent = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('@ungap/create-content'));
 
 const resolve = (name, module) => {
   if (name in cache)
