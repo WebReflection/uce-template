@@ -213,6 +213,10 @@ To know more about reactive changes, please [read this Medium post](https://medi
 
 This section goal is to showcase basic to complex examples via *uce-template*, where some example might use the `.uce` extension to confine components within their own files.
 
+<details>
+  <summary><strong>View <code>.uce</code> files as HTML</strong></summary>
+  <div>
+
 If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *Open Settings (JSON)*, and add the following to such file in order to highlight `.uce` files as *HTML*:
 
 ```js
@@ -224,6 +228,9 @@ If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *
   }
 }
 ```
+
+  </div>
+</details>
 
 <details>
   <summary><strong>Lazy Loaded Components</strong></summary>
