@@ -238,7 +238,7 @@ If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *
 
 If we define components as `view/my-component.uce` we might as well decide to include these lazily, or better, only when these are found in the current page.
 
-This approach simplifies a lot bundles, dependencies, unnecessary bloat, and it can be done by including just `uce-template` and the tiny <sup><sub>(367 bytes)</sub></sup> [uce-loader](https://github.com/WebReflection/uce-loader#readme) as bootstrap, eventually defining extra dependencies used across components.
+This approach simplifies a lot bundles, dependencies, unnecessary bloat, and it can be done by including just `uce-template` and the tiny <sup><sub>(364 bytes)</sub></sup> [uce-loader](https://github.com/WebReflection/uce-loader#readme) as bootstrap, eventually defining extra dependencies used across components.
 
 ```js
 import {parse, resolve} from 'uce-loader';
