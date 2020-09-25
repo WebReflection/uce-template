@@ -225,7 +225,135 @@ If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *
 }
 ```
 
-#### ... coming soon ...
+<details>
+  <summary><strong>Lazy Loaded Components</strong></summary>
+  <div>
+
+If we define components as `view/my-component.uce` we might as well decide to include these lazily, or better, only when these are found in the current page.
+
+This approach simplifies a lot bundles, dependencies, unnecessary bloat, and it can be done by including just `uce-template` and the tiny <sup><sub>(367 bytes)</sub></sup> [uce-loader](https://github.com/WebReflection/uce-loader#readme) as bootstrap, eventually defining extra dependencies used across components.
+
+```js
+import {parse, resolve} from 'uce-loader';
+import loader from 'uce-loader';
+
+// optional components dependencies
+import something from 'cool';
+resolve('cool', something);
+
+// bootstrap the loader
+loader({
+  on(component) {
+    // ignore uce-template itself
+    if (component !== 'uce-template')
+      fetch(`view/${component}.uce`)
+        .then(body => body.text())
+        .then(definition => {
+          document.body.appendChild(
+            parse(definition)
+          );
+        });
+  }
+});
+```
+
+The same technique could be used directly on any *HTML* page, writing some code that might be compatible with *IE11* too.
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <script defer src="//unpkg.com/uce-template"></script>
+    <script defer src="//unpkg.com/uce-loader"></script>
+    <script defer>
+    addEventListener(
+      'DOMContentLoaded',
+      function () {
+        uceLoader({
+          Template: customElements.get('uce-template'),
+          on: function (name) {
+            if (name !== 'uce-template') {
+              var xhr = new XMLHttpRequest;
+              var Template = this.Template;
+              xhr.open('get', name + '.uce', true);
+              xhr.send(null);
+              xhr.onload = function () {
+                document.body.appendChild(
+                  Template.from(xhr.responseText)
+                );
+              };
+            }
+          }
+        });
+      },
+      {once: true}
+    );
+    </script>
+  </head>
+  <body>
+    <my-component>
+      <p slot="content">
+        Some content to show in <code>my-component</code>
+      </p>
+    </my-component>
+  </body>
+</html>
+```
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Lazy Loaded uce-template</strong></summary>
+  <div>
+
+If the majority of our pages don't use components at all, adding 10K+ of *JS* on top of each page might be undesired.
+
+However, we can follow the very same *Lazy Loaded Components* approach, except our loader will be in charge of bringing in also the *uce-template* library, either when an *uce-template* itself is found, or any other component.
+
+```js
+import loader from 'uce-loader';
+loader({
+  on(component) {
+    // first component found, load uce-template
+    if (!this.q) {
+      this.q = [component];
+      const script = document.createElement('script');
+      script.src = '//unpkg.com/uce-template';
+      document.body.appendChild(script).onload = () => {
+        // get the uce-template class to use its .from(...)
+        this.Template = customElements.get('uce-template');
+        // load all queued components
+        for (var q = this.q.splice(0), i = 0; i < q.length; i++)
+          this.on(q[i]);
+      };
+    }
+    // when uce-template is loaded
+    else if (this.loaded) {
+      // ignore loading uce-template itself
+      if (component !== 'uce-template') {
+        // load the component on demand
+        fetch(`view/${component}.uce`)
+          .then(body => body.text())
+          .then(definition => {
+            document.body.appendChild(
+              this.Template.from(definition)
+            );
+          });
+      }
+    }
+    // if uce-template is not loaded yet
+    // add the component to the queue
+    else
+      this.q.push(component);
+  }
+});
+```
+
+Using this technique, our *JS* payload per page would be now reduced to less than *0.5K* once above code gets bundled and minified, while everything else will happen automatically only if there are components somewhere in the page.
+
+  </div>
+</details>
 
 - - -
 
