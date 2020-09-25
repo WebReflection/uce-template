@@ -358,7 +358,7 @@ Using this technique, our *JS* payload per page would be now reduced to less tha
 
 
 <details>
-  <summary><strong>CSP &amp; integrity</strong></summary>
+  <summary><strong>CSP integrity</strong></summary>
   <div>
 
 Since `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *requires*, the latest *integrity* value can be found in here:
