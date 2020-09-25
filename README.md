@@ -209,7 +209,25 @@ To know more about reactive changes, please [read this Medium post](https://medi
 
 - - -
 
-### How does it work?
+## Examples
+
+This section goal is to showcase most basic to more complex examples via *uce-template* where some example might use the `.uce` extension to confine components within their own file.
+
+If you are using VS Code, you can *Ctrl+Shift+p*, type *settings JSON*, choose *Open Settings (JSON)*, and add the following to such file in order to highlight `.uce` files as *HTML*:
+
+```js
+{
+  "other-settings": "...",
+
+  "files.associations": {
+    "*.uce": "html"
+  }
+}
+```
+
+- - -
+
+## How does it work?
 
 Based on [uce](https://github.com/WebReflection/uce#readme) and the latest [custom-elements polyfill](https://github.com/ungap/custom-elements#readme), this module glues most modern Web development patterns in a standard way that yet feels like magic.
 
@@ -220,7 +238,7 @@ As strawberry on top, *hooks* are provided behind the scene via the `@uce/reacti
 The *JS* environment is likely the most complex part to grasp though, so here some extra detail on how it works.
 
 
-#### The module JS environment
+### The module JS environment
 
 The component script definition happens in a virtual `Function` sandbox, where all *imports* and *exports* are normalized as *CommonJS*, and a `require(module)` utility is provided.
 
@@ -255,7 +273,7 @@ customElements.whenDefined('uce-template').then({resolve} => {
 Please note that modules are unique so it is encouraged to use real module names to avoid clashing within third parts libraries.
 
 
-#### The lazy JS environment
+### The lazy JS environment
 
 Modules can also be **loaded at runtime**, but only if *relative* or if the *CDN* supports Cross Origin Requests.
 
@@ -285,7 +303,7 @@ The **advantage** of having *lazy* modules resolution is that a component define
 As it is for ESM and CommonJS, every module is granted to be downloaded once and persist across multiple *imports*.
 
 
-#### Inherited _µce_ features
+### Inherited _µce_ features
 
 If the *default export* contains `props`, or any `onevent` handler, all the features available via *uce* will be available within the component too:
 
