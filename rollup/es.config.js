@@ -11,7 +11,6 @@ export default {
   output: {
     exports: 'named',
     file: './es.js',
-    format: 'iife',
-    name: 'uceTemplate'
+    format: 'iife'
   }
 };

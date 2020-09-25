@@ -1,4 +1,4 @@
-self.uceTemplate = (function (exports) {
+(function (exports) {
   'use strict';
 
   /*! (c) Andrea Giammarchi @webreflection ISC */
