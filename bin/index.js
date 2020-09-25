@@ -12,6 +12,7 @@ const {minify: csso} = require('csso');
 const {transform: babel} = require('@babel/core');
 
 let BABEL = false;
+let DEBUG = false;
 let SOURCE = '';
 let DEST = '';
 
@@ -37,9 +38,10 @@ for (let {argv} = process, i = 2, {length} = argv; i < length; i++) {
         console.log('');
         console.log(' \x1b[4moptions\x1b[0m');
         console.log('');
-        console.log('   --help          this message');
-        console.log('   --o             output file');
+        console.log('   -h --help       this message');
         console.log('   --babel         targets ES5');
+        console.log('   --debug         to not minify JS');
+        console.log('   -o              output file');
         console.log('');
         process.exit(0);
       case '-o':
@@ -52,6 +54,9 @@ for (let {argv} = process, i = 2, {length} = argv; i < length; i++) {
         break;
       case '--babel':
         BABEL = true;
+        break;
+      case '--debug':
+        DEBUG = true;
         break;
       default:
         console.error('unknown flag ' + key);
@@ -111,13 +116,17 @@ while (match = re.exec(outcome)) {
       .code.trim()
       .replace(/^(['"])use strict\1;/gm, '').trim()
     ;
-    terser(text, {mangle: {toplevel: true}, format: {semicolons: false}})
-      .then(({code}) => {
-        code = code.replace('Object.defineProperty(exports,"__esModule",{value:!0}),exports.default=void 0', '');
-        $(expression ? `{{${code.trim()}}}` : code);
-      })
-      .catch(exit)
-    ;
+    if (DEBUG)
+      $(expression ? `{{${text.trim()}}}` : text);
+    else {
+      terser(text, {mangle: {toplevel: true}, format: {semicolons: false}})
+        .then(({code}) => {
+          code = code.replace('Object.defineProperty(exports,"__esModule",{value:!0}),exports.default=void 0', '');
+          $(expression ? `{{${code.trim()}}}` : code);
+        })
+        .catch(exit)
+      ;
+    }
   }));
 }
 

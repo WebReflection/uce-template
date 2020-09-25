@@ -4,7 +4,7 @@
 <meta charset=UTF-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>WIP: uce-template</title>
-<script defer src=../index.js></script>
+<script defer src=../../index.js></script>
 </head>
 <body>
 <template is=uce-template lazy>
@@ -21,12 +21,11 @@ This is
 a test
       </pre>
 </my-counter>
-<script type=module>
-var e=n(require("@uce/reactive")),t=n(require("js/bundle.js"))
-function n(e){return e&&e.__esModule?e:{default:e}}console.log(t.default)
-var o={props:{text:""},setup:function(t){var n=(0,e.default)({count:0})
-return t.connected=function(){console.log("connected")},{element:t,state:n,inc:function(){n.count++},dec:function(){n.count--}}}}
-exports.default=o
+<script type=module>import{reactive as e}from"@uce"
+import o from"js/bundle.js"
+console.log(o)
+export default{props:{text:""},setup(o){const t=e({count:0})
+return o.connected=()=>{console.log("connected")},{element:o,state:t,inc:()=>{t.count++},dec:()=>{t.count--}}}}
 </script>
 <style scoped>button,span{font-size:200%}span{width:4rem;display:inline-block;text-align:center}button{width:4rem;height:4rem;border:0;border-radius:10px;background-color:#2e8b57;color:#fff}</style>
 <style>body{font-family:sans-serif;user-select:none}</style>

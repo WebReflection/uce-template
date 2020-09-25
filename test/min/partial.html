@@ -1,0 +1,14 @@
+<style scoped>button,span{font-size:200%}span{width:4rem;display:inline-block;text-align:center}button{width:4rem;height:4rem;border:0;border-radius:10px;background-color:#2e8b57;color:#fff}</style>
+<my-counter>
+<button onclick={{dec}}>
+-
+</button>
+<span>{{state.count}}</span>
+<button onclick={{inc}}>
++
+</button>
+</my-counter>
+<script type=module>import{reactive as n}from"@uce"
+export default{setup:function(t){var c=n({count:0})
+return t.connected=function(){console.log("connected")},{element:t,state:c,inc:function(){c.count++},dec:function(){c.count--}}}}
+</script>

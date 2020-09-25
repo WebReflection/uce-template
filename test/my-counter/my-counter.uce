@@ -13,12 +13,8 @@
   export default {
     setup(element) {
       const state = reactive({ count: 0 });
-      const inc = () => {
-        state.count++;
-      };
-      const dec = () => {
-        state.count--;
-      };
+      const inc = () => { state.count++ };
+      const dec = () => { state.count-- };
       return { state, inc, dec };
     },
   };
