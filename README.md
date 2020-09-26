@@ -547,4 +547,4 @@ Soon to be published: a classic DBMonster demo/showcase, 'cause usually if that 
 
 ## ... and more!
 
-If you'd like to understand more about `uce-template` and how does it work, please check [this page](./extra-details.mds) out.
+If you'd like to understand more about `uce-template` and how does it work, please check [this page](./extra-details.md) out.
