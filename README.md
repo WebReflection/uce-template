@@ -485,6 +485,66 @@ The advantage of using props is that it's possible to define an initial state th
 
 - - -
 
+## F.A.Q.
+
+<details>
+  <summary><strong>Why is the polyfill included?</strong></summary>
+  <div>
+
+As standalone file, my [Custom Elements](https://github.com/ungap/custom-elements#readme) size is around *2.1K*, but since it's share almost every library *uce* uses too, bundling it together looked like the best way to go, resulting in just *1K* extra for a module that fits in roughly *10K* budget.
+
+On the other hand, because the polyfill is not obtrusive and based on runtime features detections, this means that nobody should care about bringing any other polyfill ever, but also *Chrome*, *Firefox*, and *Edge*, will be untouched, so that every custom element will run natively, either builtin extend or regular.
+
+In the *Safari* case, or *WebKit* based, only custom elements builtin are provided, while in *IE11* and the old *MS Edge*, both builtin extends and regular elements are patched.
+
+That's it: don't worry about any polyfill, because everything is already included in here!
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Why using <code>{{...}}</code> instead of <code>${...}</code>?</strong></summary>
+  <div>
+
+As much as I would've loved to have `${...}` interpolation boundaries, *IE11* would break if an element in the DOM contains `${...}` as attribute.
+
+Because `{{...}}` is a well established alternative, I've decided to avoid monkey-patching possible *IE11* issues and simply stick with a de-facto standard alternative.
+
+It is also worth considering that *Vue* uses `{{...}}` too, and so do many other template based engines.
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Why is <code>Function</code> necessary?</strong></summary>
+  <div>
+
+As explained in the "*CSP & integrity/nonce*" part of the [how to/examples](#how-to--examples), it is necessary to use `Function` for at least two reasons:
+
+  * it's the only way to opt out from `"use strict";` directive and pass through a `with(object)` statement, needed to understand interpolations without creating a whole JS engine from the scratch
+  * it's the only way to provide at runtime a CJS like `require` functionality within `<script type="module">` content
+
+But even if there was no `Function` in the equation, parsing and executing a `<script>` tag to define custom elements would've been the exact same equivalent of using `Function`, because *CSP* would've needed special rules anyway, since the operation is basically an *eval* call in the global context.
+
+As summary, instead of tricking the browser with practices that are as safe, or as unsafe, as a `Function` call, I've simply used `Function` instead, keeping the code size reasonable.
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>What about performance?</strong></summary>
+  <div>
+
+This project is *as-performant-as* native Custom Elements could be, except for the definition cost, which is a *one-off* operation per each unique custom element *Class*, hence irrelevant in the long run, and there's an insignificant overhead within the initial template parsing logic, but its repeated execution is as fast as *uhtml* can be, and if you [check the latest status](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) you'll find it's one of the fastest of its kind.
+
+Soon to be published: a classic DBMonster demo/showcase, 'cause usually if that works fast enough, everything else would too 😉
+
+  </div>
+</details>
+
+- - -
+
+
 ## ... and more!
 
 If you'd like to understand more about `uce-template` and how does it work, please check [this page](./extra-details.mds) out.
