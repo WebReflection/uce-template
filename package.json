@@ -8,7 +8,7 @@
     "build": "npm run graph && npm run cjs && npm run rollup:es && npm run rollup:babel && npm run min && npm run integrity && npm run size",
     "cjs": "ascjs esm cjs",
     "graph": "cp node_modules/reactive-props/state.js test/js/reactive-props.js",
-    "integrity": "cat min.js | openssl dgst -sha384 -binary | openssl base64 -A > nonce.txt && node -e 'const {readFileSync,writeFileSync}=require(`fs`);writeFileSync(`README.md`,readFileSync(`README.md`).toString().replace(/(integrity|nonce)=\"[^\"]*?\"/g,`$1=\"${readFileSync(`nonce.txt`)}\"`))'",
+    "integrity": "cat min.js | openssl dgst -sha256 -binary | openssl base64 -A > nonce.txt && node -e 'const {readFileSync,writeFileSync}=require(`fs`),nonce=readFileSync(`nonce.txt`);writeFileSync(`README.md`,readFileSync(`README.md`).toString().replace(/(integrity)=\"[^\"]*?\"/g,`$1=\"sha256-${nonce}\"`).replace(/(__nonce__ )`[^`]*?`/g,\"$1`\"+nonce+\"`\"))'",
     "rollup:es": "rollup --config rollup/es.config.js && sed -i.bck 's/^var /self./' es.js && rm -rf es.js.bck",
     "rollup:babel": "rollup --config rollup/babel.config.js && sed -i.bck 's/^var /self./' index.js && rm -rf index.js.bck",
     "min": "terser index.js --comments='/^!/' -c -m -o min.js",

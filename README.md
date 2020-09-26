@@ -358,20 +358,52 @@ Using this technique, our *JS* payload per page would be now reduced to less tha
 
 
 <details>
+  <summary><strong>Lazy loaded expected components</strong></summary>
+  <div>
+
+As the page could contain other custom elements from third party and libraries, it might be a good idea to predefine a well known of expected components, as opposite of trying to load any possible custom elements via the `view/${...}.uce` request.
+
+Previous lazy loading techniques would work just fine already, but instead of checking that the component name is not `uce-template`, we could use a *Set*:
+
+```js
+loader({
+  known: new Set(['some-comp', 'some-other']),
+  on(component) {
+    if (this.known.has(component))
+      fetch(`view/${component}.uce`)
+        .then(body => body.text())
+        .then(definition => {
+          document.body.appendChild(
+            parse(definition)
+          );
+        });
+  }
+});
+```
+
+The advantage of this technique is that the `known` *Set* could be dynamically generated through the list of `view/*.uce` files so that nothing would break if the found component is not part of the *uce-template* family.
+
+  </div>
+</details>
+
+
+<details>
   <summary><strong>CSP &amp; integrity/nonce</strong></summary>
   <div>
 
-Since `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *requires*, the latest *integrity* value can be found in here:
+`uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
+
+Accordingly, it is recommended to increase security using either the __nonce__ `1YxcTfEnvyuRIy2Tcs93/oDBUdX5AiXeAHO9NM6aC3U=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
-<script src="https://unpkg.com/uce-template"
-        integrity="nXFcDzF++3jp1t0cHwxof4iFavx+BMzwV+rwE7LXwYSQFvI+RmYYzT/vtPI3KUpr"
-        nonce="nXFcDzF++3jp1t0cHwxof4iFavx+BMzwV+rwE7LXwYSQFvI+RmYYzT/vtPI3KUpr"
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
+<script defer src="/js/uce-template.js"
+        integrity="sha256-1YxcTfEnvyuRIy2Tcs93/oDBUdX5AiXeAHO9NM6aC3U="
         crossorigin="anonymous">
 </script>
 ```
 
-Please note that this integrity **changes on every release** so please be sure you have the latest version (this README reflects the latest).
+Please note that these values **change on every release** so please be sure you have the latest version (this README reflects the latest).
 
   </div>
 </details>
