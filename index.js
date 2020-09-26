@@ -1756,7 +1756,7 @@
   };
   var noop = function noop() {};
 
-  var dom = (function () {
+  var domHandler = (function () {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
         _ref$all = _ref.all,
         all = _ref$all === void 0 ? false : _ref$all,
@@ -1771,12 +1771,16 @@
 
     return function (element, props, update) {
       var value = function value(props, key) {
-        var result = props[key];
+        var result = props[key],
+            type = _typeof(result);
 
         if (element.hasOwnProperty(key)) {
           result = element[key];
           delete element[key];
-        } else if (element.hasAttribute(key)) result = getAttribute(element, key);
+        } else if (element.hasAttribute(key)) {
+          result = getAttribute(element, key);
+          if (type == 'number') result = +result;else if (type == 'boolean') result = !/^(?:false|0|)$/.test(result);
+        }
 
         return result;
       };
@@ -1786,7 +1790,7 @@
     };
   });
 
-  var reactive = dom({
+  var reactive = domHandler({
     dom: true
   });
   var CE = customElements;
@@ -2035,6 +2039,74 @@
     return render(this, html.apply(null, arguments));
   }
 
+  var defineProperties$3 = Object.defineProperties,
+      keys$2 = Object.keys;
+
+  var accessor$1 = function accessor(all, shallow, hook, value, update) {
+    return {
+      configurable: true,
+      get: function get() {
+        return value;
+      },
+      set: function set(_) {
+        if (all || _ !== value || shallow && _typeof(_) === 'object' && _) {
+          value = _;
+          if (hook) update.call(this, value);else update.call(this);
+        }
+      }
+    };
+  };
+
+  var loop$1 = function loop(props, get, all, shallow, useState, update) {
+    var desc = {};
+    var hook = useState !== noop$1;
+    var args = [all, shallow, hook];
+
+    for (var ke = keys$2(props), y = 0; y < ke.length; y++) {
+      var value = get(props, ke[y]);
+      var extras = hook ? useState(value) : [value, useState];
+      if (update) extras[1] = update;
+      desc[ke[y]] = accessor$1.apply(null, args.concat(extras));
+    }
+
+    return desc;
+  };
+  var noop$1 = function noop() {};
+
+  var dom = (function () {
+    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref$all = _ref.all,
+        all = _ref$all === void 0 ? false : _ref$all,
+        _ref$shallow = _ref.shallow,
+        shallow = _ref$shallow === void 0 ? true : _ref$shallow,
+        _ref$useState = _ref.useState,
+        useState = _ref$useState === void 0 ? noop$1 : _ref$useState,
+        _ref$getAttribute = _ref.getAttribute,
+        getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
+      return element.getAttribute(key);
+    } : _ref$getAttribute;
+
+    return function (element, props, update) {
+      var value = function value(props, key) {
+        var result = props[key],
+            type = _typeof(result);
+
+        if (element.hasOwnProperty(key)) {
+          result = element[key];
+          delete element[key];
+        } else if (element.hasAttribute(key)) {
+          result = getAttribute(element, key);
+          if (type == 'number') result = +result;else if (type == 'boolean') result = !/^(?:false|0|)$/.test(result);
+        }
+
+        return result;
+      };
+
+      var desc = loop$1(props, value, all, shallow, useState, update);
+      return defineProperties$3(element, desc);
+    };
+  });
+
   var value = function value(props, key) {
     return props[key];
   };
@@ -2046,10 +2118,10 @@
         _ref$shallow = _ref.shallow,
         shallow = _ref$shallow === void 0 ? true : _ref$shallow,
         _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState;
+        useState = _ref$useState === void 0 ? noop$1 : _ref$useState;
 
     return function (props, update) {
-      return defineProperties$1({}, loop(props, value, all, shallow, useState, update));
+      return defineProperties$3({}, loop$1(props, value, all, shallow, useState, update));
     };
   });
 
@@ -2184,7 +2256,7 @@
   };
 
   var create$2 = Object.create,
-      keys$2 = Object.keys;
+      keys$3 = Object.keys;
   var cache$2 = create$2(null);
   var strict = '"use strict;"\n';
 
@@ -2229,7 +2301,7 @@
     return cjs;
   };
   var cjs = function cjs(extras) {
-    var args = keys$2(extras || {});
+    var args = keys$3(extras || {});
     var values = args.map(function (k) {
       return extras[k];
     }).concat($require);
@@ -2243,7 +2315,7 @@
       var fn = Function.apply(null, params);
       fn.apply(null, values.concat(module, exports));
       var result = module.exports;
-      var k = keys$2(result);
+      var k = keys$3(result);
       return k.length === 1 && k[0] === 'default' ? result["default"] : result;
     };
   };
@@ -2301,7 +2373,7 @@
     };
   });
 
-  var domHandler = stateHandler({
+  var domHandler$1 = stateHandler({
     dom: true,
     useState: useState
   });
@@ -2403,7 +2475,7 @@
             (this.render = augmentor(function () {
               if (init) {
                 init = false;
-                if (props) domHandler(self, props);
+                if (props) domHandler$1(self, props);
                 context = setup.call(component, self) || {};
               }
 

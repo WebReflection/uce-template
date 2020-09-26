@@ -393,12 +393,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-Accordingly, it is recommended to increase security using either the __nonce__ `JriidMYNtc0R7JLCRSVewpJVcKLaryIwXKAVH1L44/A=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+Accordingly, it is recommended to increase security using either the __nonce__ `IlIP3XP8dJK5dBfBYql85/Cr+RGT0D0fLUXj9LwOBeE=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-JriidMYNtc0R7JLCRSVewpJVcKLaryIwXKAVH1L44/A="
+        integrity="sha256-IlIP3XP8dJK5dBfBYql85/Cr+RGT0D0fLUXj9LwOBeE="
         crossorigin="anonymous">
 </script>
 ```
@@ -407,6 +407,81 @@ Please note that these values **change on every release** so please be sure you 
 
   </div>
 </details>
+
+
+<details>
+  <summary><strong>Component own events</strong> <sup><sub>( without props )</sub></sup></summary>
+  <div>
+
+As it is for [uce](https://github.com/WebReflection/uce#readme), if the definition contains `onEvent(){...}` methods, these will be used to define the component.
+
+However, since states are usually decoupled from the component itself, it's a good idea to use a *WeakMap* to relate any component with its state and ... don't worry, *WeakMap* is natively supported in *IE11* too!
+
+[Live demo](https://codepen.io/WebReflection/pen/KKzERew?editors=1000)
+
+```html
+<button is="my-btn">
+  Clicked {{times}} times!
+</button>
+<script type="module">
+  const states = new WeakMap;
+  export default {
+    setup(element) {
+      const state = {times: 0};
+      states.set(element, state);
+      return state;
+    },
+    onClick() {
+      states.get(this).times++;
+      // update the current view if the
+      // state is not reactive
+      this.render();
+    }
+  };
+</script>
+```
+
+Please note this example covers any *state* VS *component* use case, as using the *WeakMap* is a recommendation.
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Component own events</strong> <sup><sub>( with props )</sub></sup></summary>
+  <div>
+
+If `props` object is defined, and since *props** update the view automatically once changed, we might not need a *WeakMap* to relate the component's state.
+
+[Live demo](https://codepen.io/WebReflection/pen/XWdGqxp?editors=1000)
+
+```html
+<button is="my-btn"></button>
+<template is="uce-template">
+  <button is="my-btn">
+    Clicked {{element.times}} times!
+  </button>
+  <script type="module">
+    export default {
+      props: {times: 0},
+      setup: element => ({element}),
+      onClick() {
+        this.times++;
+      }
+    };
+  </script>
+</template>
+```
+
+The advantage of using props is that it's possible to define an initial state through attributes, or via direct setting it when rendered through the `html` utility, so that having a button with `times="3"`, as example, would be rendered showing *Clicked 3 times!* right away.
+
+```html
+<button is="my-btn" times="3"></button>
+```
+
+  </div>
+</details>
+
+
 
 - - -
 
