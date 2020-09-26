@@ -1,43 +1,22 @@
 'use strict';
-const re = /\{\{([^\2]+?)(\}\})/g;
 Object.defineProperty(exports, '__esModule', {value: true}).default = html => {
   const template = [];
   const values = [];
-  let i = 0, match = null;
-  while (match = re.exec(html)) {
-    const {index} = match;
-    const code = match[1];
-    template.push(html.slice(i, index));
-    values.push(code);
-    i = index + code.length + 4;
+  const {length} = html;
+  let s = 0, e = 0, p = 0;
+  while (
+    s < length &&
+    -1 < (s = html.indexOf('{{', p)) &&
+    -1 < (e = html.indexOf('}}', s + 2))
+  ) {
+    template.push(html.slice(p, s));
+    values.push(html.slice(s + 2, e));
+    p = e + 2;
   }
-  template.push(html.slice(i));
+  template.push(html.slice(p));
   const args = [template];
   const rest = Function(
     'return function(){with(arguments[0])return[' + values + ']}'
   )();
   return object => args.concat(rest(object));
 };
-
-/* this might map brackets in a slightly better way
-const map = (str, end, search) => {
-  const {length} = search;
-  const positions = [];
-  let position = 0;
-  do {
-    position = str.indexOf(search, position);
-    if (position < 0)
-      position = end;
-    else {
-      positions.push(position);
-      position += length;
-    }
-  } while (position < end);
-  return positions;
-};
-
-const {length} = str;
-const start = map(str, length, '{{');
-const end = map(str, length, '}}');
-// */
-
