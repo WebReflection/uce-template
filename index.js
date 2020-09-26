@@ -2279,37 +2279,50 @@
     });
   };
 
-  var partial = (function (str) {
-    var length = str.length;
+  var re = /\{\{([^\2]+?)(\}\})/g;
+  var partial = (function (html) {
     var template = [];
     var values = [];
-    var args = [template];
-    var start = 0;
+    var i = 0,
+        match = null;
 
-    for (var open = false, p = 0, $ = 0, i = 0; i < length; i++) {
-      var chunk = str.substr(i, 2);
-
-      if (chunk === '{{') {
-        if (!open) {
-          open = !open;
-          p = 2 + i++;
-        }
-
-        $++;
-      } else if (open && chunk === '}}' && ! --$) {
-        open = !open;
-        template.push(str.slice(start, p - 2));
-        values.push(str.slice(p, i));
-        start = 2 + i++;
-      }
+    while (match = re.exec(html)) {
+      var _match = match,
+          index = _match.index;
+      var code = match[1];
+      template.push(html.slice(i, index));
+      values.push(code);
+      i = index + code.length + 4;
     }
 
-    template.push(str.slice(start));
+    template.push(html.slice(i));
+    var args = [template];
     var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
     return function (object) {
       return args.concat(rest(object));
     };
   });
+  /* this might map brackets in a slightly better way
+  const map = (str, end, search) => {
+    const {length} = search;
+    const positions = [];
+    let position = 0;
+    do {
+      position = str.indexOf(search, position);
+      if (position < 0)
+        position = end;
+      else {
+        positions.push(position);
+        position += length;
+      }
+    } while (position < end);
+    return positions;
+  };
+
+  const {length} = str;
+  const start = map(str, length, '{{');
+  const end = map(str, length, '}}');
+  // */
 
   var domHandler = stateHandler({
     dom: true,
