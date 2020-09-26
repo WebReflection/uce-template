@@ -787,104 +787,6 @@
     return value !== this[i];
   }
 
-  /**
-   * @typedef {object} ParseResult an object with parsed results
-   * @property {string[]} template - the list of chunks around interpolations
-   * @property {string[]} values - interpolations as strings
-   */
-
-  /**
-   * @typedef {[string[], ...any[]]} TagArguments an array to use as template
-   *                                              literals tag arguments
-   */
-
-  /**
-   * @callback Partial a callback that re-evaluate each time new data associated
-   *                   to the same template-like array.
-   * @param {object} [object] the optional data to evaluate as interpolated values
-   * @returns {TagArguments} an array to use as template literals tag arguments
-   */
-
-  /**
-  * The default `transform` callback
-  * @param {string} value the interpolation value as string
-  */
-  var noop = function noop(value) {
-    return value;
-  };
-  /**
-   * The default "null" fallback when no object is passed to the Partial.
-   */
-
-
-  var fallback = Object.create(null);
-  /**
-   * Given a string and an optional function used to transform each value
-   * found as interpolated content, returns an object with a `template` and
-   * a `values` properties, as arrays, containing the template chunks,
-   * and all its interpolations as strings.
-   * @param {string} content the string to parse/convert as template chunks
-   * @param {function} [transform] the optional function to modify string values
-   * @returns {ParseResult} an object with `template` and `values` arrays.
-   */
-
-  var parse = function parse(content, transform) {
-    var fn = transform || noop;
-    var template = [];
-    var values = [];
-    var length = content.length;
-    var i = 0;
-
-    while (i <= length) {
-      var open = content.indexOf('${', i);
-
-      if (-1 < open) {
-        template.push(content.slice(i, open));
-        open = i = open + 2;
-        var close = 1; // TODO: this *might* break if the interpolation has strings
-        //       containing random `{}` chars ... but implementing
-        //       a whole JS parser here doesn't seem worth it
-        //       for such irrelevant edge-case ... or does it?
-
-        while (0 < close && i < length) {
-          var c = content[i++];
-          close += c === '{' ? 1 : c === '}' ? -1 : 0;
-        }
-
-        values.push(fn(content.slice(open, i - 1)));
-      } else {
-        template.push(content.slice(i));
-        i = length + 1;
-      }
-    }
-
-    return {
-      template: template,
-      values: values
-    };
-  };
-  /**
-   * Given a string and an optional function used to transform each value
-   * found as interpolated content, returns a callback that can be used to
-   * repeatedly generate new content from the same template array.
-   * @param {string} content the string to parse/convert as template chunks
-   * @param {function} [transform] the optional function to modify string values
-   * @returns {Partial} a function that accepts an optional object to generate
-   *                    new content, through the same template, each time.
-   */
-
-  var partial = function partial(content, transform) {
-    var _parse = parse(content, transform),
-        template = _parse.template,
-        values = _parse.values;
-
-    var args = [template];
-    var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
-    return function (object) {
-      return args.concat(rest(object || fallback));
-    };
-  };
-
   function _typeof(obj) {
     "@babel/helpers - typeof";
 
@@ -1840,7 +1742,7 @@
 
   var loop = function loop(props, get, all, shallow, useState, update) {
     var desc = {};
-    var hook = useState !== noop$1;
+    var hook = useState !== noop;
     var args = [all, shallow, hook];
 
     for (var ke = keys(props), y = 0; y < ke.length; y++) {
@@ -1852,7 +1754,7 @@
 
     return desc;
   };
-  var noop$1 = function noop() {};
+  var noop = function noop() {};
 
   var dom = (function () {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -1861,7 +1763,7 @@
         _ref$shallow = _ref.shallow,
         shallow = _ref$shallow === void 0 ? true : _ref$shallow,
         _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop$1 : _ref$useState,
+        useState = _ref$useState === void 0 ? noop : _ref$useState,
         _ref$getAttribute = _ref.getAttribute,
         getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
       return element.getAttribute(key);
@@ -2144,7 +2046,7 @@
         _ref$shallow = _ref.shallow,
         shallow = _ref$shallow === void 0 ? true : _ref$shallow,
         _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop$1 : _ref$useState;
+        useState = _ref$useState === void 0 ? noop : _ref$useState;
 
     return function (props, update) {
       return defineProperties$1({}, loop(props, value, all, shallow, useState, update));
@@ -2377,6 +2279,38 @@
     });
   };
 
+  var partial = (function (str) {
+    var length = str.length;
+    var template = [];
+    var values = [];
+    var args = [template];
+    var start = 0;
+
+    for (var open = false, p = 0, $ = 0, i = 0; i < length; i++) {
+      var chunk = str.substr(i, 2);
+
+      if (chunk === '{{') {
+        if (!open) {
+          open = !open;
+          p = 2 + i++;
+        }
+
+        $++;
+      } else if (open && chunk === '}}' && ! --$) {
+        open = !open;
+        template.push(str.slice(start, p - 2));
+        values.push(str.slice(p, i));
+        start = 2 + i++;
+      }
+    }
+
+    template.push(str.slice(start));
+    var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
+    return function (object) {
+      return args.concat(rest(object));
+    };
+  });
+
   var domHandler = stateHandler({
     dom: true,
     useState: useState
@@ -2400,17 +2334,17 @@
   }),
       drop = _QSAO.drop,
       parseQSAO = _QSAO.parse;
-  var loader = cjs.loader; // Note: rollup breaks es.js if this is imported elsewhere
+  var loader = cjs.loader; // Note: rollup breaks es.js if this is imported on top
   var resolve = function resolve(name, module) {
     if (name in cache$2) throw new Error('duplicated ' + name);
     cache$2[name] = module;
   };
-  var parse$1 = function parse(parts) {
+  var parse = function parse(parts) {
     var template = new Template();
     template.innerHTML = parts;
     return template;
   };
-  var fallback$1 = {
+  var fallback = {
     setup: function setup() {}
   };
   var toBeDefined = new Map();
@@ -2463,8 +2397,8 @@
     props: null,
     init: function init() {
       var defineComponent = function defineComponent(content) {
-        var component = script ? loader(content) : fallback$1;
-        var setup = component.setup || fallback$1.setup;
+        var component = script ? loader(content) : fallback;
+        var setup = component.setup || fallback.setup;
         var observedAttributes = component.observedAttributes,
             props = component.props;
         var params = partial(template);
@@ -2546,9 +2480,7 @@
           if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
             if (name) badTemplate();
             name = tagName.toLowerCase();
-            template = child.innerHTML.replace(/\{\{([^\2]+?)(\}\})/g, function (_, $1) {
-              return '${' + $1 + '}';
-            });
+            template = child.innerHTML;
             if (is) as = child.getAttribute('is').toLowerCase();
             if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
           } else if (/^script$/i.test(tagName)) {
@@ -2590,9 +2522,9 @@
     }
   });
   Template.resolve = resolve;
-  Template.from = parse$1;
+  Template.from = parse;
 
-  exports.parse = parse$1;
+  exports.parse = parse;
   exports.resolve = resolve;
 
   return exports;

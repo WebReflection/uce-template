@@ -8,7 +8,6 @@ import {
   useEffect, useLayoutEffect
 } from 'augmentor';
 
-import {partial} from 'tag-params';
 import {define, render, html, svg, css} from 'uce';
 
 import stateHandler from 'reactive-props';
@@ -32,9 +31,10 @@ const {drop, parse: parseQSAO} = QSAO({
 import {cache, cjs, asCJS} from 'uce-require';
 const {loader} = cjs;
 
-// Note: rollup breaks es.js if this is imported elsewhere
-//       ... don't ask ...
+// Note: rollup breaks es.js if this is imported on top
 import createContent from '@ungap/create-content';
+
+import partial from './partial.js';
 
 export const resolve = (name, module) => {
   if (name in cache)
@@ -170,10 +170,7 @@ const Template = define('uce-template', {
           if (name)
             badTemplate();
           name = tagName.toLowerCase();
-          template = child.innerHTML.replace(
-                      /\{\{([^\2]+?)(\}\})/g,
-                      (_, $1) => '${' + $1 + '}'
-                    );
+          template = child.innerHTML;
           if (is)
             as = child.getAttribute('is').toLowerCase();
           if (child.hasAttribute('shadow'))

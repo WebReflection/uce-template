@@ -14,7 +14,6 @@ const {
   useLayoutEffect
 } = require('augmentor');
 
-const {partial} = require('tag-params');
 const {define, render, html, svg, css} = require('uce');
 
 const stateHandler = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('reactive-props'));
@@ -38,9 +37,10 @@ const {drop, parse: parseQSAO} = QSAO({
 const {cache, cjs, asCJS} = require('uce-require');
 const {loader} = cjs;
 
-// Note: rollup breaks es.js if this is imported elsewhere
-//       ... don't ask ...
+// Note: rollup breaks es.js if this is imported on top
 const createContent = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('@ungap/create-content'));
+
+const partial = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('./partial.js'));
 
 const resolve = (name, module) => {
   if (name in cache)
@@ -178,10 +178,7 @@ const Template = define('uce-template', {
           if (name)
             badTemplate();
           name = tagName.toLowerCase();
-          template = child.innerHTML.replace(
-                      /\{\{([^\2]+?)(\}\})/g,
-                      (_, $1) => '${' + $1 + '}'
-                    );
+          template = child.innerHTML;
           if (is)
             as = child.getAttribute('is').toLowerCase();
           if (child.hasAttribute('shadow'))
