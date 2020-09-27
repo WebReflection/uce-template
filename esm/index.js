@@ -29,7 +29,7 @@ const {drop, parse: parseQSAO} = QSAO({
   }
 });
 
-import {cache, cjs, asCJS} from 'uce-require';
+import {asCJS, cache, cjs, waiting} from 'uce-require';
 const {loader} = cjs;
 
 // Note: rollup breaks es.js if this is imported on top
@@ -38,7 +38,7 @@ import createContent from '@ungap/create-content';
 import partial from './partial.js';
 
 export const resolve = (name, module) => {
-  if (name in cache)
+  if (name in cache && cache[name] !== waiting)
     throw new Error('duplicated ' + name);
   cache[name] = module;
 };

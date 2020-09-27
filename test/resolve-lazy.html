@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script defer src="../index.js"></script>
+  <script type="module">
+  customElements.get('uce-template').resolve('promise-helper', Promise);
+  </script>
+</head>
+<body>
+  <a-lie></a-lie>
+  <template is="uce-template">
+    <a-lie>component</a-lie>
+    <script type="module">
+      import Promise from 'promise-helper';
+      export default {
+        setup() {
+          new Promise($ => setTimeout($, 1000, 'it works'))
+                .then(console.log);
+        }
+      };
+    </script>
+  </template>
+</body>
+</html>

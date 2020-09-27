@@ -2188,8 +2188,11 @@
   });
 
   var create$2 = Object.create,
+      defineProperty = Object.defineProperty,
       keys$2 = Object.keys;
   var cache$2 = create$2(null);
+  var waiting = {};
+  var lazyModules = [];
   var strict = '"use strict;"\n';
 
   var $require = function $require(module) {
@@ -2211,20 +2214,41 @@
     }).replace(/(^|[\r\n])\s*export\s+(const|let|var|function)(\s+)(\w+)/g, function (_, $, $1, $2, $3) {
       exports.push("exports.".concat($3, " = ").concat($3, ";"));
       return $ + $1 + $2 + $3;
-    }).concat('\n', exports.join('\n')).replace(/require\s*\((['"])([^\1]+?)\1\s*\)/g, function ($, _, module) {
+    }).concat('\n', exports.join('\n')).replace(/require\s*\(\s*(['"])([^\1]+?)\1\s*\)/g, function ($, _, module) {
       imports.push(module);
       return $;
     });
 
     if (require) {
       imports.forEach(function (key) {
-        if (!(key in cache$2) && /^(?:[./]|https?:)/.test(key)) {
-          cache$2[key] = void 0;
-          all.push(load(key, key));
+        if (!(key in cache$2)) {
+          lazyModules.push(new Lie(function ($) {
+            var module = waiting;
+
+            if (/^(?:[./]|https?:)/.test(key)) {
+              cache$2[key] = module;
+              var xhr = new XMLHttpRequest();
+              xhr.open('get', path, true);
+              xhr.send(null);
+
+              xhr.onload = function () {
+                $(cache$2[key] = cjs.loader(xhr.responseText));
+              };
+            } else {
+              defineProperty(cache$2, key, {
+                get: function get() {
+                  return module;
+                },
+                set: function set(value) {
+                  $(module = value);
+                }
+              });
+            }
+          }));
         }
       });
       return new Lie(function ($) {
-        Lie.all(all).then(function () {
+        Lie.all(lazyModules).then(function () {
           return $(cjs);
         });
       });
@@ -2267,19 +2291,6 @@
       function update() {
         if (++i === length) $();
       }
-    });
-  };
-  var all = [];
-
-  var load = function load(module, path) {
-    return new Lie(function ($) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('get', path, true);
-      xhr.send(null);
-
-      xhr.onload = function () {
-        $(cache$2[module] = cjs.loader(xhr.responseText));
-      };
     });
   };
 
@@ -2330,7 +2341,7 @@
       parseQSAO = _QSAO.parse;
   var loader = cjs.loader; // Note: rollup breaks es.js if this is imported on top
   var resolve = function resolve(name, module) {
-    if (name in cache$2) throw new Error('duplicated ' + name);
+    if (name in cache$2 && cache$2[name] !== waiting) throw new Error('duplicated ' + name);
     cache$2[name] = module;
   };
   var parse = function parse(parts) {
