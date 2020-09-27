@@ -108,7 +108,7 @@ Template.from = parse;
 function init(tried) {
   const defineComponent = content => {
     const params = partial(template);
-    const component = script && loader(content);
+    const component = script && loader(content) || {};
     const {observedAttributes, props, setup} = component;
     const definition = {
       props: null,

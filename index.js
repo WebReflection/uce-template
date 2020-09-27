@@ -2406,7 +2406,7 @@
   function init(tried) {
     var defineComponent = function defineComponent(content) {
       var params = partial(template);
-      var component = script && loader(content);
+      var component = script && loader(content) || {};
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
