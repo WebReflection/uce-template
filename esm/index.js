@@ -29,8 +29,7 @@ const {drop, parse: parseQSAO} = QSAO({
   }
 });
 
-import {asCJS, cache, cjs, waiting} from 'uce-require';
-const {loader} = cjs;
+import {asCJS, cache, loader, waiting} from 'uce-require';
 
 // Note: rollup breaks es.js if this is imported on top
 import createContent from '@ungap/create-content';

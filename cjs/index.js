@@ -35,8 +35,7 @@ const {drop, parse: parseQSAO} = QSAO({
   }
 });
 
-const {asCJS, cache, cjs, waiting} = require('uce-require');
-const {loader} = cjs;
+const {asCJS, cache, loader, waiting} = require('uce-require');
 
 // Note: rollup breaks es.js if this is imported on top
 const createContent = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('@ungap/create-content'));

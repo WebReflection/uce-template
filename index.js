@@ -2187,11 +2187,26 @@
     };
   });
 
+  if (!Lie.all) Lie.all = function (list) {
+    return new Lie(function ($) {
+      var length = list.length;
+      if (!length) $();
+      var i = 0;
+
+      while (i < length) {
+        list[i++].then(update);
+      }
+
+      i = 0;
+
+      function update() {
+        if (++i === length) $();
+      }
+    });
+  };
   var create$2 = Object.create,
       defineProperty = Object.defineProperty,
       keys$2 = Object.keys;
-  var cache$2 = create$2(null);
-  var waiting = {};
   var lazyModules = [];
   var strict = '"use strict;"\n';
 
@@ -2199,6 +2214,8 @@
     return cache$2[module];
   };
 
+  var cache$2 = create$2(null);
+  var waiting = {};
   var asCJS = function asCJS(esm, require) {
     var exports = [];
     var imports = [];
@@ -2228,11 +2245,11 @@
             if (/^(?:[./]|https?:)/.test(key)) {
               cache$2[key] = module;
               var xhr = new XMLHttpRequest();
-              xhr.open('get', path, true);
+              xhr.open('get', key, true);
               xhr.send(null);
 
               xhr.onload = function () {
-                $(cache$2[key] = cjs.loader(xhr.responseText));
+                $(cache$2[key] = loader(xhr.responseText));
               };
             } else {
               defineProperty(cache$2, key, {
@@ -2275,24 +2292,7 @@
       return k.length === 1 && k[0] === 'default' ? result["default"] : result;
     };
   };
-  cjs.loader = cjs();
-  if (!Lie.all) Lie.all = function (list) {
-    return new Lie(function ($) {
-      var length = list.length;
-      if (!length) $();
-      var i = 0;
-
-      while (i < length) {
-        list[i++].then(update);
-      }
-
-      i = 0;
-
-      function update() {
-        if (++i === length) $();
-      }
-    });
-  };
+  var loader = cjs();
 
   var partial = (function (html) {
     var template = [];
@@ -2339,7 +2339,6 @@
   }),
       drop = _QSAO.drop,
       parseQSAO = _QSAO.parse;
-  var loader = cjs.loader; // Note: rollup breaks es.js if this is imported on top
   var resolve = function resolve(name, module) {
     if (name in cache$2 && cache$2[name] !== waiting) console.warn('duplicated ' + name);
     cache$2[name] = module;
