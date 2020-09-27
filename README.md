@@ -137,6 +137,14 @@ All **dynamic parts** must be wrapped within `{{dynamic}}` curly brackets as sho
 
 The `state`, `dec`, and `inc` references will be passed along through the script node, if any.
 
+Whenever the component is rendered, its update callback is invoked providing the element itself as a **context**.
+
+```html
+<button is="my-button">
+  I am a {{this.tagName}}
+</button>
+```
+
 Regarding **ShadowDOM**, its polyfill is not included in this project but it's possible to define a component through its *shadow root* by adding a *shadow* attribute:
 
 ```html
