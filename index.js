@@ -514,6 +514,24 @@
     }
   })();
 
+  var Lie = typeof Promise === 'function' ? Promise : function (fn) {
+    var queue = [],
+        resolved = 0,
+        value;
+    fn(function ($) {
+      value = $;
+      resolved = 1;
+      queue.splice(0).forEach(then);
+    });
+    return {
+      then: then
+    };
+
+    function then(fn) {
+      return resolved ? setTimeout(fn, 0, value) : queue.push(fn), this;
+    }
+  };
+
   var compat = typeof cancelAnimationFrame === 'function';
   var cAF = compat ? cancelAnimationFrame : clearTimeout;
   var rAF = compat ? requestAnimationFrame : setTimeout;
@@ -2169,24 +2187,6 @@
     };
   });
 
-  var Promise$1 = typeof Promise === 'function' ? Promise : function (fn) {
-    var queue = [],
-        resolved = 0,
-        value;
-    fn(function ($) {
-      value = $;
-      resolved = 1;
-      queue.splice(0).forEach(then);
-    });
-    return {
-      then: then
-    };
-
-    function then(fn) {
-      return resolved ? setTimeout(fn, 0, value) : queue.push(fn), this;
-    }
-  };
-
   var create$2 = Object.create,
       keys$2 = Object.keys;
   var cache$2 = create$2(null);
@@ -2218,13 +2218,13 @@
 
     if (require) {
       imports.forEach(function (key) {
-        if (!(key in cache$2)) {
+        if (!(key in cache$2) && /^(?:[./]|https?:)/.test(key)) {
           cache$2[key] = void 0;
           all.push(load(key, key));
         }
       });
-      return new Promise$1(function ($) {
-        Promise$1.all(all).then(function () {
+      return new Lie(function ($) {
+        Lie.all(all).then(function () {
           return $(cjs);
         });
       });
@@ -2252,8 +2252,8 @@
     };
   };
   cjs.loader = cjs();
-  if (!Promise$1.all) Promise$1.all = function (list) {
-    return new Promise$1(function ($) {
+  if (!Lie.all) Lie.all = function (list) {
+    return new Lie(function ($) {
       var length = list.length;
       if (!length) $();
       var i = 0;
@@ -2272,7 +2272,7 @@
   var all = [];
 
   var load = function load(module, path) {
-    return new Promise$1(function ($) {
+    return new Lie(function ($) {
       var xhr = new XMLHttpRequest();
       xhr.open('get', path, true);
       xhr.send(null);
@@ -2384,7 +2384,8 @@
     useLayoutEffect: useLayoutEffect
   });
   resolve('qsa-observer', QSAO);
-  resolve('reactive-props', stateHandler); // <template is="uce-template" />
+  resolve('reactive-props', stateHandler);
+  resolve('@webreflection/lie', Lie); // <template is="uce-template" />
 
   var Template = define('uce-template', {
     "extends": 'template',

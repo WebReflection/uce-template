@@ -21,6 +21,7 @@ In the previous example, the `@uce/reactive` is virtually predefined in *uce-tem
   * [qsa-observer](https://github.com/WebReflection/qsa-observer#readme) to monitor nodes if needed
   * [reactive-props](https://github.com/WebReflection/reactive-props#readme) to create any reactive alchemy, even if this is provided already via `@uce/reactive`
   * [uce](https://github.com/WebReflection/uce#readme) to eventually import `html`, `svg`, or `render` utilities from [uhtml](https://github.com/WebReflection/uce#readme)
+  * [@webreflection/lie](https://github.com/WebReflection/lie#readme) to have basic *Promise* support in IE11 (resolves only)
 
 While `import {html} from 'uce'`, and *uce* in general, is very helpful to compose inner nodes of a defined component, every other module is there only because this library uses these modules to work, and it wouldn't make sense to not provide what's already included in *uce-template*.
 

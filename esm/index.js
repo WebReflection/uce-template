@@ -1,4 +1,5 @@
 import '@ungap/custom-elements';
+import Lie from '@webreflection/lie';
 
 import {
   augmentor,
@@ -86,6 +87,7 @@ resolve('augmentor', {
 });
 resolve('qsa-observer', QSAO);
 resolve('reactive-props', stateHandler);
+resolve('@webreflection/lie', Lie);
 
 // <template is="uce-template" />
 const Template = define('uce-template', {

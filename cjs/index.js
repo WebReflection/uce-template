@@ -1,5 +1,6 @@
 'use strict';
 require('@ungap/custom-elements');
+const Lie = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('@webreflection/lie'));
 
 const {
   augmentor,
@@ -94,6 +95,7 @@ resolve('augmentor', {
 });
 resolve('qsa-observer', QSAO);
 resolve('reactive-props', stateHandler);
+resolve('@webreflection/lie', Lie);
 
 // <template is="uce-template" />
 const Template = define('uce-template', {
