@@ -575,8 +575,73 @@ That is, any interpolation value can be a DOM node, some value, or an Array of n
 </details>
 
 <details>
-  <summary><strong>Provide yor own modules</strong></summary>
+  <summary><strong>Provide yor own modules / dependencies</strong></summary>
   <div>
+
+The *module system* provided by *uce-template* is extremely simple and fully extendible, so that each component can `import any from 'thing';` as long as `thing` has been provided/resolved via the library.
+
+#### Resolve at build time
+
+If we are going to define a single bundle entry point, and we know that each component would need one or more dependency, we can do the following:
+
+```js
+import {resolve} from 'uce-template';
+
+import moduleA from '3rd-party';
+const moduleB = {any: 'value'};
+
+resolve('module-a', moduleA);
+resolve('module-b', moduleB);
+```
+
+Once this build lands as single Web page entry point, all components would be able to *import* right away all base/default modules, plus all those pre-resolved.
+
+[Live demo](https://codepen.io/WebReflection/pen/XWdGByv?editors=1001) <sup><sub>(see both HTML and JS panel + console)</sub></sup>
+
+```html
+<my-comp></my-comp>
+<script type="module">
+  import moduleA from 'module-a';
+  import moduleB from 'module-a';
+  export default {
+    setup() {
+      console.log(moduleA, moduleB);
+    }
+  }
+</script>
+```
+
+#### Resolve lazily / on demand
+
+In case the defined component *imports* something from an external file, like `import module from './js/module.js'` would do, such import would be lazily resolved, together with any other module that is not known yet, meaning that `./js/module.js` file could contain something like this:
+
+```js
+// a file used to bootstrap uce-template component
+// dependencies can always use the uce-template class
+const {resolve} = customElements.get('uce-template');
+
+// resolve one to many modules
+resolve('quite-big-module', {...});
+```
+
+A component script can then import this file and access its exported modules right after.
+
+[Live demo](https://webreflection.github.io/uce-template/test/resolve.html)
+
+```html
+<script type="module">
+  import './js/module.js';
+  import quiteBigModule from 'quite-big-module';
+  export default {
+    setup() {
+      console.log(quiteBigModule);
+    }
+  }
+</script>
+```
+
+Together with *lazy loaded component*, this approach makes it possible to ship components that are fully based on an external `vue/comp.uce` file definition, where any of these components can also share one or more `.js` files able to *resolve* any module needed here or there (shared dependencies in one file, as opposite of dependencies per each shipped components).
+
   </div>
 </details>
 
@@ -635,6 +700,19 @@ As summary, instead of tricking the browser with practices that are as safe, or 
 This project is *as-performant-as* native Custom Elements could be, except for the definition cost, which is a *one-off* operation per each unique custom element *Class*, hence irrelevant in the long run, and there's an insignificant overhead within the initial template parsing logic, but its repeated execution is as fast as *uhtml* can be, and if you [check the latest status](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) you'll find it's one of the fastest of its kind.
 
 Soon to be published: a classic DBMonster demo/showcase, 'cause usually if that works fast enough, everything else would too 😉
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Are there blocking requests with modules?</strong></summary>
+  <div>
+
+Nothing in this library is blocking, and modules are resolved *once* only, even relative path imports.
+
+The logic is pretty simple: if the module name has not been resolved and it's a relative import, an asynchronous request will be made and evaluated later, while if the module is not resolved, and it's a qualified name, it will be resolved only once some code provides it.
+
+All this, plus the *import* to *require* resolution, is handled by the [uce-require](https://github.com/WebReflection/uce-require) helper, purposely not coupled with this module itself, as it could hopefully inspire, and be used by, other projects too.
 
   </div>
 </details>

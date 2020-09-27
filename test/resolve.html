@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="../index.js"></script>
-  <script>
-  customElements.get('uce-template').resolve('promise-helper', Promise);
-  </script>
 </head>
 <body>
   <a-lie></a-lie>
   <template is="uce-template">
     <a-lie>component</a-lie>
     <script type="module">
+      // it will resolve 'promise-helper' module
+      import './resolve.js';
+      // that can be used in here already
       import Promise from 'promise-helper';
+
       export default {
         setup() {
           new Promise($ => setTimeout($, 1000, 'it works'))
