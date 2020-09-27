@@ -536,6 +536,41 @@ This can be used either to place single slots in interpolations, as [shown in th
 </template>
 ```
 
+**However**, in cases where the same-name slots order is not necessarily visualized sequentially, it is always possible to pass an array of nodes instead.
+
+That is, any interpolation value can be a DOM node, some value, or an Array of nodes, same way [µhtml](https://github.com/WebReflection/uhtml#readme) works.
+
+[Live demo](https://codepen.io/WebReflection/pen/JjXzqww?editors=1000)
+
+```html
+<howto-tabs>
+  <p>Loading tabs ...</p>
+  <howto-tab role="heading" slot="tab">Tab 1</howto-tab>
+  <howto-panel role="region" slot="panel">Content 1</howto-panel>
+  <howto-tab role="heading" slot="tab">Tab 2</howto-tab>
+  <howto-panel role="region" slot="panel">Content 2</howto-panel>
+</howto-tabs>
+
+<template is="uce-template">
+  <howto-tabs>
+    {{tabs}}
+  </howto-tabs>
+  <script type="module">
+    import {slot} from '@uce';
+    export default {
+      setup(element) {
+        const {tab, panel} = slot(element);
+        const tabs = tab.reduce(
+          (tabs, tab, i) => tabs.concat(tab, panel[i]),
+          []
+        );
+        return {tabs};
+      }
+    };
+  </script>
+</template>
+```
+
   </div>
 </details>
 
