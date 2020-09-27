@@ -2507,7 +2507,7 @@
     }
 
     var selector = as ? name + '[is="' + as + '"]' : name;
-    if (!selector && !tried) return setTimeout(init.bind(this), 0, true);
+    if (!selector) return setTimeout(tried ? badTemplate : init.bind(this), 0, true);
 
     for (var _i = styles.length; _i--;) {
       var _child = styles[_i];

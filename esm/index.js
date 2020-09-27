@@ -193,8 +193,8 @@ function init(tried) {
     }
   }
   const selector = as ? (name + '[is="' + as + '"]') : name;
-  if (!selector && !tried)
-    return setTimeout(init.bind(this), 0, true);
+  if (!selector)
+    return setTimeout(tried ? badTemplate : init.bind(this), 0, true);
   for (let i = styles.length; i--;) {
     const child = styles[i];
     const {textContent} = child;
