@@ -2348,9 +2348,6 @@
     template.innerHTML = parts;
     return template;
   };
-  var fallback = {
-    setup: function setup() {}
-  };
   var toBeDefined = new Map();
 
   var badTemplate = function badTemplate() {
@@ -2408,15 +2405,15 @@
 
   function init(tried) {
     var defineComponent = function defineComponent(content) {
-      var component = script ? loader(content) : fallback;
-      var setup = component.setup || fallback.setup;
-      var observedAttributes = component.observedAttributes,
-          props = component.props;
       var params = partial(template);
+      var component = script && loader(content);
+      var observedAttributes = component.observedAttributes,
+          props = component.props,
+          setup = component.setup;
       var definition = {
         props: null,
         "extends": as ? name : 'element',
-        init: function init() {
+        init: script ? function () {
           var _this = this;
 
           var self = this;
@@ -2425,14 +2422,14 @@
           var context = null;
           (this.render = augmentor(function () {
             if (init) {
-              init = false;
+              init = !init;
               if (props) domHandler(self, props);
-              context = setup.call(component, self) || {};
+              context = setup && component.setup(self) || {};
             }
 
             html.apply(null, params.call(_this, context));
           }))();
-        }
+        } : function () {}
       };
       if (css) definition.style = function () {
         return css;

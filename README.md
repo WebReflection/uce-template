@@ -401,12 +401,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `a/HRdLUpDMSi9WSm63WEBpAQOWubRN02BmA70tLgsWY=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `Iw4CPWT67QTeqtnvIAhsK7Vo316EXtt+F+aRkk6JdXQ=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-a/HRdLUpDMSi9WSm63WEBpAQOWubRN02BmA70tLgsWY="
+        integrity="sha256-Iw4CPWT67QTeqtnvIAhsK7Vo316EXtt+F+aRkk6JdXQ="
         crossorigin="anonymous">
 </script>
 ```

@@ -56,7 +56,6 @@ const parse = parts => {
 };
 exports.parse = parse;
 
-const fallback = {setup: () => {}};
 const toBeDefined = new Map;
 const badTemplate = () => {
   throw new Error('bad template');
@@ -108,28 +107,29 @@ Template.from = parse;
 
 function init(tried) {
   const defineComponent = content => {
-    const component = script ? loader(content) : fallback;
-    const setup = component.setup || fallback.setup;
-    const {observedAttributes, props} = component;
     const params = partial(template);
+    const component = script && loader(content);
+    const {observedAttributes, props, setup} = component;
     const definition = {
       props: null,
       extends: as ? name : 'element',
-      init() {
-        const self = this;
-        const {html} = self;
-        let init = true;
-        let context = null;
-        (this.render = augmentor(() => {
-          if (init) {
-            init = false;
-            if (props)
-              domHandler(self, props);
-            context = setup.call(component, self) || {};
-          }
-          html.apply(null, params.call(this, context));
-        }))();
-      }
+      init: script ?
+        function () {
+          const self = this;
+          const {html} = self;
+          let init = true;
+          let context = null;
+          (this.render = augmentor(() => {
+            if (init) {
+              init = !init;
+              if (props)
+                domHandler(self, props);
+              context = setup && component.setup(self) || {};
+            }
+            html.apply(null, params.call(this, context));
+          }))();
+        } :
+        function () {}
     };
     if (css)
       definition.style = () => css;
