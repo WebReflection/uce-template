@@ -120,7 +120,7 @@ const Template = define('uce-template', {
                 domHandler(self, props);
               context = setup.call(component, self) || {};
             }
-            html.apply(null, params(context));
+            html.apply(null, params.call(this, context));
           }))();
         }
       };

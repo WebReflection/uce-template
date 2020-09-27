@@ -27,7 +27,7 @@
       <button onclick={{dec}}>
         -
       </button>
-      <span>{{state.count}} {{element.text}}</span>
+      <span>{{state.count}} {{this.text}}</span>
       <button onclick={{inc}}>
         +
       </button>
@@ -66,7 +66,7 @@ a test
           console.log('connected');
         };
 
-        return {element, state, inc, dec};
+        return {state, inc, dec};
       }
     };
     </script>

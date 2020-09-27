@@ -32,7 +32,7 @@ Inspired by [Vue 3 "_One Piece_"](https://github.com/vuejs/vue-next/releases/tag
 </template>
 ```
 
-Add this library in the equation, and [see it bootstrapping](https://codepen.io/WebReflection/pen/xxVMgZx?editors=1000) all defined components.
+Add this library to the equation, and [see it bootstrapping](https://codepen.io/WebReflection/pen/xxVMgZx?editors=1000) all defined components.
 
 - - -
 
@@ -361,7 +361,7 @@ Using this technique, our *JS* payload per page would be now reduced to less tha
   <summary><strong>Lazy loaded expected components</strong></summary>
   <div>
 
-As the page could contain other custom elements from third party and libraries, it might be a good idea to predefine a well known of expected components, as opposite of trying to load any possible custom elements via the `view/${...}.uce` request.
+As the page could contain other custom elements from third party and libraries, it might be a good idea to predefine a well known *Set* of expected components, as opposite of trying to load any possible custom elements via the `view/${...}.uce` request.
 
 Previous lazy loading techniques would work just fine already, but instead of checking that the component name is not `uce-template`, we could use a *Set*:
 
@@ -393,12 +393,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `psGD45T0uTPhQx0wBoJqa+TNXJA+AC0IdTEctlG6Ky0=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `p8kVtg9F4upEfDw9/e+O4af/Kp+8mtLMiOm62WxaDtY=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-psGD45T0uTPhQx0wBoJqa+TNXJA+AC0IdTEctlG6Ky0="
+        integrity="sha256-p8kVtg9F4upEfDw9/e+O4af/Kp+8mtLMiOm62WxaDtY="
         crossorigin="anonymous">
 </script>
 ```

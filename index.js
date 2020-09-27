@@ -2400,6 +2400,8 @@
           props: null,
           "extends": as ? name : 'element',
           init: function init() {
+            var _this = this;
+
             var self = this;
             var html = self.html;
             var init = true;
@@ -2411,7 +2413,7 @@
                 context = setup.call(component, self) || {};
               }
 
-              html.apply(null, params(context));
+              html.apply(null, params.call(_this, context));
             }))();
           }
         };
