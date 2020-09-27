@@ -2341,7 +2341,7 @@
       parseQSAO = _QSAO.parse;
   var loader = cjs.loader; // Note: rollup breaks es.js if this is imported on top
   var resolve = function resolve(name, module) {
-    if (name in cache$2 && cache$2[name] !== waiting) throw new Error('duplicated ' + name);
+    if (name in cache$2 && cache$2[name] !== waiting) console.warn('duplicated ' + name);
     cache$2[name] = module;
   };
   var parse = function parse(parts) {

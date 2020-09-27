@@ -39,7 +39,7 @@ import partial from './partial.js';
 
 export const resolve = (name, module) => {
   if (name in cache && cache[name] !== waiting)
-    throw new Error('duplicated ' + name);
+    console.warn('duplicated ' + name);
   cache[name] = module;
 };
 

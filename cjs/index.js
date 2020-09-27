@@ -45,7 +45,7 @@ const partial = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* i
 
 const resolve = (name, module) => {
   if (name in cache && cache[name] !== waiting)
-    throw new Error('duplicated ' + name);
+    console.warn('duplicated ' + name);
   cache[name] = module;
 };
 exports.resolve = resolve;
