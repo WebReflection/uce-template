@@ -69,7 +69,8 @@ const virtualNameSpace = {
   slot: element => [].reduce.call(
     element.querySelectorAll('[slot]'),
     (slot, node) => {
-      slot[node.getAttribute('slot')] = node;
+      const name = node.getAttribute('slot');
+      slot[name] = [].concat(slot[name] || [], node);
       return slot;
     },
     {}

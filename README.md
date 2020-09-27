@@ -401,12 +401,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `f35dum7alnofXfCI3qH5hv7xdnMPxneBtLX1xlM9hMc=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `a/HRdLUpDMSi9WSm63WEBpAQOWubRN02BmA70tLgsWY=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-f35dum7alnofXfCI3qH5hv7xdnMPxneBtLX1xlM9hMc="
+        integrity="sha256-a/HRdLUpDMSi9WSm63WEBpAQOWubRN02BmA70tLgsWY="
         crossorigin="anonymous">
 </script>
 ```
@@ -415,7 +415,6 @@ Please note that these values **change on every release** so please be sure you 
 
   </div>
 </details>
-
 
 <details>
   <summary><strong>Component own events</strong> <sup><sub>( without props )</sub></sup></summary>
@@ -489,7 +488,62 @@ The advantage of using props is that it's possible to define an initial state th
   </div>
 </details>
 
+<details>
+  <summary><strong>Multiple, dynamic, slots</strong></summary>
+  <div>
 
+The `import {slot} from '@uce'` helper simplifies retrieval of slots by name, returning an *array* of elements grouped through the same name.
+
+This can be used either to place single slots in interpolations, as [shown in this example](https://codepen.io/WebReflection/pen/OJNdZPB?editors=1000), or to place multiple slots within the same node.
+
+[Live demo](https://codepen.io/WebReflection/pen/NWNJVLR?editors=1000)
+
+```html
+<filter-list>
+  Loading filter ...
+  <ul>
+    <li slot="list">some</li>
+    <li slot="list">searchable</li>
+    <li slot="list">text</li>
+  </ul>
+</filter-list>
+
+<template is="uce-template">
+  <filter-list>
+    <div>
+      <input placeholder=filter oninput={{filter}}>
+    </div>
+    <ul>
+      {{list}}
+    </ul>
+  </filter-list>
+  <script type="module">
+    import {slot} from '@uce';
+    export default {
+      setup(element) {
+        const list = slot(element).list || [];
+        return {
+          list,
+          filter({currentTarget: {value}}) {
+            for (const li of list)
+              li.style.display =
+                li.textContent.includes(value) ? null : 'none';
+          }
+        };
+      }
+    };
+  </script>
+</template>
+```
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Provide yor own modules</strong></summary>
+  <div>
+  </div>
+</details>
 
 - - -
 

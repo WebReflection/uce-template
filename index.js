@@ -2369,7 +2369,8 @@
     }),
     slot: function slot(element) {
       return [].reduce.call(element.querySelectorAll('[slot]'), function (slot, node) {
-        slot[node.getAttribute('slot')] = node;
+        var name = node.getAttribute('slot');
+        slot[name] = [].concat(slot[name] || [], node);
         return slot;
       }, {});
     }
