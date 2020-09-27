@@ -2390,136 +2390,138 @@
   var Template = define('uce-template', {
     "extends": 'template',
     props: null,
-    init: function init() {
-      var defineComponent = function defineComponent(content) {
-        var component = script ? loader(content) : fallback;
-        var setup = component.setup || fallback.setup;
-        var observedAttributes = component.observedAttributes,
-            props = component.props;
-        var params = partial(template);
-        var definition = {
-          props: null,
-          "extends": as ? name : 'element',
-          init: function init() {
-            var _this = this;
-
-            var self = this;
-            var html = self.html;
-            var init = true;
-            var context = null;
-            (this.render = augmentor(function () {
-              if (init) {
-                init = false;
-                if (props) domHandler(self, props);
-                context = setup.call(component, self) || {};
-              }
-
-              html.apply(null, params.call(_this, context));
-            }))();
-          }
-        };
-        if (css) definition.style = function () {
-          return css;
-        };
-        if (shadow) definition.attachShadow = {
-          mode: shadow
-        };
-
-        if (observedAttributes) {
-          definition.observedAttributes = observedAttributes;
-
-          definition.attributeChanged = function () {
-            if (this.hasOwnProperty('attributeChanged')) this.attributeChanged.apply(this, arguments);
-          };
-        }
-
-        if (script) {
-          definition.connected = function () {
-            if (this.hasOwnProperty('connected')) this.connected();
-          };
-
-          definition.disconnected = function () {
-            if (this.hasOwnProperty('disconnected')) this.disconnected();
-          };
-        }
-
-        for (var key in component) {
-          if (!(key in definition)) definition[key] = component[key];
-        }
-
-        define(as || name, definition);
-      };
-
-      var content = this.content,
-          ownerDocument = this.ownerDocument,
-          parentNode = this.parentNode;
-
-      var _ref = content || createContent(this.innerHTML),
-          childNodes = _ref.childNodes;
-
-      var styles = []; // drop this element in IE11before its content is live
-
-      if (parentNode && this instanceof HTMLUnknownElement) parentNode.removeChild(this);
-      var later = defineComponent;
-      var as = '';
-      var css = '';
-      var name = '';
-      var script = '';
-      var shadow = '';
-      var template = '';
-
-      for (var i = 0; i < childNodes.length; i++) {
-        var child = childNodes[i];
-
-        if (child.nodeType === 1) {
-          var tagName = child.tagName;
-          var is = child.hasAttribute('is');
-          if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
-            if (name) badTemplate();
-            name = tagName.toLowerCase();
-            template = child.innerHTML;
-            if (is) as = child.getAttribute('is').toLowerCase();
-            if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
-          } else if (/^script$/i.test(tagName)) {
-            if (script) badTemplate();
-            script = child.textContent;
-
-            later = function later() {
-              asCJS(script, true).then(defineComponent);
-            };
-          }
-        }
-      }
-
-      var selector = as ? name + '[is="' + as + '"]' : name;
-      if (!selector) return;
-
-      for (var _i = styles.length; _i--;) {
-        var _child = styles[_i];
-        var textContent = _child.textContent;
-        if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
-          (function () {
-            var def = [];
-            css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
-              return '\x01' + def.push($1) + ',';
-            }).split(',').map(function (s) {
-              return s.trim() ? selector + ' ' + s.trim() : '';
-            }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
-              return '{' + def[--$1] + '}';
-            }).replace(/(,\n)+/g, ',\n');
-          })();
-        } else css += textContent;
-      }
-
-      if (this.hasAttribute('lazy')) {
-        toBeDefined.set(selector, later);
-        query.push(selector);
-        parseQSAO(ownerDocument.querySelectorAll(query));
-      } else later();
-    }
+    init: init
   });
   Template.resolve = resolve;
   Template.from = parse;
+
+  function init(tried) {
+    var defineComponent = function defineComponent(content) {
+      var component = script ? loader(content) : fallback;
+      var setup = component.setup || fallback.setup;
+      var observedAttributes = component.observedAttributes,
+          props = component.props;
+      var params = partial(template);
+      var definition = {
+        props: null,
+        "extends": as ? name : 'element',
+        init: function init() {
+          var _this = this;
+
+          var self = this;
+          var html = self.html;
+          var init = true;
+          var context = null;
+          (this.render = augmentor(function () {
+            if (init) {
+              init = false;
+              if (props) domHandler(self, props);
+              context = setup.call(component, self) || {};
+            }
+
+            html.apply(null, params.call(_this, context));
+          }))();
+        }
+      };
+      if (css) definition.style = function () {
+        return css;
+      };
+      if (shadow) definition.attachShadow = {
+        mode: shadow
+      };
+
+      if (observedAttributes) {
+        definition.observedAttributes = observedAttributes;
+
+        definition.attributeChanged = function () {
+          if (this.hasOwnProperty('attributeChanged')) this.attributeChanged.apply(this, arguments);
+        };
+      }
+
+      if (script) {
+        definition.connected = function () {
+          if (this.hasOwnProperty('connected')) this.connected();
+        };
+
+        definition.disconnected = function () {
+          if (this.hasOwnProperty('disconnected')) this.disconnected();
+        };
+      }
+
+      for (var key in component) {
+        if (!(key in definition)) definition[key] = component[key];
+      }
+
+      define(as || name, definition);
+    };
+
+    var content = this.content,
+        ownerDocument = this.ownerDocument,
+        parentNode = this.parentNode;
+
+    var _ref = content || createContent(this.innerHTML),
+        childNodes = _ref.childNodes;
+
+    var styles = []; // drop this element in IE11before its content is live
+
+    if (parentNode && this instanceof HTMLUnknownElement) parentNode.removeChild(this);
+    var later = defineComponent;
+    var as = '';
+    var css = '';
+    var name = '';
+    var script = '';
+    var shadow = '';
+    var template = '';
+
+    for (var i = 0; i < childNodes.length; i++) {
+      var child = childNodes[i];
+
+      if (child.nodeType === 1) {
+        var tagName = child.tagName;
+        var is = child.hasAttribute('is');
+        if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
+          if (name) badTemplate();
+          name = tagName.toLowerCase();
+          template = child.innerHTML;
+          if (is) as = child.getAttribute('is').toLowerCase();
+          if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
+        } else if (/^script$/i.test(tagName)) {
+          if (script) badTemplate();
+          script = child.textContent;
+
+          later = function later() {
+            asCJS(script, true).then(defineComponent);
+          };
+        }
+      }
+    }
+
+    var selector = as ? name + '[is="' + as + '"]' : name;
+    if (!selector && !tried) return setTimeout(init.bind(this), 0, true);
+
+    for (var _i = styles.length; _i--;) {
+      var _child = styles[_i];
+      var textContent = _child.textContent;
+      if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
+        (function () {
+          var def = [];
+          css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
+            return '\x01' + def.push($1) + ',';
+          }).split(',').map(function (s) {
+            return s.trim() ? selector + ' ' + s.trim() : '';
+          }).join(',\n').replace(/\x01(\d+),/g, function (_, $1) {
+            return '{' + def[--$1] + '}';
+          }).replace(/(,\n)+/g, ',\n');
+        })();
+      } else css += textContent;
+    }
+
+    if (this.hasAttribute('lazy')) {
+      toBeDefined.set(selector, later);
+      query.push(selector);
+      parseQSAO(ownerDocument.querySelectorAll(query));
+    } else later();
+  }
 
   exports.parse = parse;
   exports.resolve = resolve;

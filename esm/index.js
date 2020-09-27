@@ -90,136 +90,137 @@ resolve('reactive-props', stateHandler);
 resolve('@webreflection/lie', Lie);
 
 // <template is="uce-template" />
-const Template = define('uce-template', {
-  extends: 'template',
-  props: null,
-  init() {
-    const defineComponent = content => {
-      const component = script ? loader(content) : fallback;
-      const setup = component.setup || fallback.setup;
-      const {observedAttributes, props} = component;
-      const params = partial(template);
-      const definition = {
-        props: null,
-        extends: as ? name : 'element',
-        init() {
-          const self = this;
-          const {html} = self;
-          let init = true;
-          let context = null;
-          (this.render = augmentor(() => {
-            if (init) {
-              init = false;
-              if (props)
-                domHandler(self, props);
-              context = setup.call(component, self) || {};
-            }
-            html.apply(null, params.call(this, context));
-          }))();
-        }
-      };
-      if (css)
-        definition.style = () => css;
-      if (shadow)
-        definition.attachShadow = {mode: shadow};
-      if (observedAttributes) {
-        definition.observedAttributes = observedAttributes;
-        definition.attributeChanged = function () {
-          if (this.hasOwnProperty('attributeChanged'))
-            this.attributeChanged.apply(this, arguments);
-        };
-      }
-      if (script) {
-        definition.connected = function () {
-          if (this.hasOwnProperty('connected'))
-            this.connected();
-        };
-        definition.disconnected = function () {
-          if (this.hasOwnProperty('disconnected'))
-            this.disconnected();
-        };
-      }
-      for (const key in component) {
-        if (!(key in definition))
-          definition[key] = component[key];
-      }
-      define(as || name, definition);
-    };
-
-    const {content, ownerDocument, parentNode} = this;
-    const {childNodes} = content || createContent(this.innerHTML);
-    const styles = [];
-
-    // drop this element in IE11before its content is live
-    if (parentNode && this instanceof HTMLUnknownElement)
-      parentNode.removeChild(this);
-
-    let later = defineComponent;
-    let as = '';
-    let css = '';
-    let name = '';
-    let script = '';
-    let shadow = '';
-    let template = '';
-    for (let i = 0; i < childNodes.length; i++) {
-      const child = childNodes[i];
-      if (child.nodeType === 1) {
-        const {tagName} = child;
-        const is = child.hasAttribute('is');
-        if (/^style$/i.test(tagName))
-          styles.push(child);
-        else if (is || /-/i.test(tagName)) {
-          if (name)
-            badTemplate();
-          name = tagName.toLowerCase();
-          template = child.innerHTML;
-          if (is)
-            as = child.getAttribute('is').toLowerCase();
-          if (child.hasAttribute('shadow'))
-            shadow = child.getAttribute('shadow') || 'open';
-        }
-        else if (/^script$/i.test(tagName)) {
-          if (script)
-            badTemplate();
-          script = child.textContent;
-          later = () => {
-            asCJS(script, true).then(defineComponent);
-          };
-        }
-      }
-    }
-    const selector = as ? (name + '[is="' + as + '"]') : name;
-    if (!selector)
-      return;
-    for (let i = styles.length; i--;) {
-      const child = styles[i];
-      const {textContent} = child;
-      if (child.hasAttribute('shadow'))
-        template = '<style>' + textContent + '</style>' + template;
-      else if (child.hasAttribute('scoped')) {
-        const def = [];
-        css += textContent.replace(
-                /\{([^}]+?)\}/g,
-                (_, $1) => '\x01' + def.push($1) + ','
-              )
-              .split(',')
-              .map(s => (s.trim() ? (selector + ' ' + s.trim()) : ''))
-              .join(',\n')
-              .replace(/\x01(\d+),/g, (_, $1) => '{' + def[--$1] + '}')
-              .replace(/(,\n)+/g, ',\n');
-      }
-      else
-        css += textContent;
-    }
-    if (this.hasAttribute('lazy')) {
-      toBeDefined.set(selector, later);
-      query.push(selector);
-      parseQSAO(ownerDocument.querySelectorAll(query));
-    }
-    else
-      later();
-  }
-});
+const Template = define(
+  'uce-template',
+  {extends: 'template', props: null, init}
+);
 
 Template.resolve = resolve;
 Template.from = parse;
+
+function init(tried) {
+  const defineComponent = content => {
+    const component = script ? loader(content) : fallback;
+    const setup = component.setup || fallback.setup;
+    const {observedAttributes, props} = component;
+    const params = partial(template);
+    const definition = {
+      props: null,
+      extends: as ? name : 'element',
+      init() {
+        const self = this;
+        const {html} = self;
+        let init = true;
+        let context = null;
+        (this.render = augmentor(() => {
+          if (init) {
+            init = false;
+            if (props)
+              domHandler(self, props);
+            context = setup.call(component, self) || {};
+          }
+          html.apply(null, params.call(this, context));
+        }))();
+      }
+    };
+    if (css)
+      definition.style = () => css;
+    if (shadow)
+      definition.attachShadow = {mode: shadow};
+    if (observedAttributes) {
+      definition.observedAttributes = observedAttributes;
+      definition.attributeChanged = function () {
+        if (this.hasOwnProperty('attributeChanged'))
+          this.attributeChanged.apply(this, arguments);
+      };
+    }
+    if (script) {
+      definition.connected = function () {
+        if (this.hasOwnProperty('connected'))
+          this.connected();
+      };
+      definition.disconnected = function () {
+        if (this.hasOwnProperty('disconnected'))
+          this.disconnected();
+      };
+    }
+    for (const key in component) {
+      if (!(key in definition))
+        definition[key] = component[key];
+    }
+    define(as || name, definition);
+  };
+
+  const {content, ownerDocument, parentNode} = this;
+  const {childNodes} = content || createContent(this.innerHTML);
+  const styles = [];
+
+  // drop this element in IE11before its content is live
+  if (parentNode && this instanceof HTMLUnknownElement)
+    parentNode.removeChild(this);
+
+  let later = defineComponent;
+  let as = '';
+  let css = '';
+  let name = '';
+  let script = '';
+  let shadow = '';
+  let template = '';
+  for (let i = 0; i < childNodes.length; i++) {
+    const child = childNodes[i];
+    if (child.nodeType === 1) {
+      const {tagName} = child;
+      const is = child.hasAttribute('is');
+      if (/^style$/i.test(tagName))
+        styles.push(child);
+      else if (is || /-/i.test(tagName)) {
+        if (name)
+          badTemplate();
+        name = tagName.toLowerCase();
+        template = child.innerHTML;
+        if (is)
+          as = child.getAttribute('is').toLowerCase();
+        if (child.hasAttribute('shadow'))
+          shadow = child.getAttribute('shadow') || 'open';
+      }
+      else if (/^script$/i.test(tagName)) {
+        if (script)
+          badTemplate();
+        script = child.textContent;
+        later = () => {
+          asCJS(script, true).then(defineComponent);
+        };
+      }
+    }
+  }
+  const selector = as ? (name + '[is="' + as + '"]') : name;
+  if (!selector && !tried)
+    return setTimeout(init.bind(this), 0, true);
+  for (let i = styles.length; i--;) {
+    const child = styles[i];
+    const {textContent} = child;
+    if (child.hasAttribute('shadow'))
+      template = '<style>' + textContent + '</style>' + template;
+    else if (child.hasAttribute('scoped')) {
+      const def = [];
+      css += textContent.replace(
+              /\{([^}]+?)\}/g,
+              (_, $1) => '\x01' + def.push($1) + ','
+            )
+            .split(',')
+            .map(s => (s.trim() ? (selector + ' ' + s.trim()) : ''))
+            .join(',\n')
+            .replace(/\x01(\d+),/g, (_, $1) => '{' + def[--$1] + '}')
+            .replace(/(,\n)+/g, ',\n');
+    }
+    else
+      css += textContent;
+  }
+  if (this.hasAttribute('lazy')) {
+    toBeDefined.set(selector, later);
+    query.push(selector);
+    parseQSAO(ownerDocument.querySelectorAll(query));
+  }
+  else
+    later();
+}
