@@ -124,6 +124,7 @@ function init(tried) {
       };
     }
     if (script) {
+      const apply = !!(setup || template);
       definition.init = function () {
         let init = true;
         let context = null;
@@ -133,12 +134,14 @@ function init(tried) {
         (self.render = augmentor(() => {
           if (init) {
             init = !init;
-            if (props)
-              domHandler(self, props);
-            if (setup && (context = component.setup(self)))
+            if (apply) {
+              if (props)
+                domHandler(self, props);
+              context = setup && component.setup(self) || component;
               update = () => {
                 html.apply(self, params.call(self, context));
               };
+            }
           }
           update();
         })());
