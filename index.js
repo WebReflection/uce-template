@@ -2437,6 +2437,8 @@
       }
 
       if (script) {
+        var apply = !!(setup || template);
+
         definition.init = function () {
           var init = true;
           var context = null;
@@ -2446,10 +2448,15 @@
           self.render = augmentor(function () {
             if (init) {
               init = !init;
-              if (props) domHandler(self, props);
-              if (setup && (context = component.setup(self))) update = function update() {
-                html.apply(self, params.call(self, context));
-              };
+
+              if (apply) {
+                if (props) domHandler(self, props);
+                context = setup && component.setup(self) || component;
+
+                update = function update() {
+                  html.apply(self, params.call(self, context));
+                };
+              }
             }
 
             update();
