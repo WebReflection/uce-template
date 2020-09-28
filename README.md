@@ -2,7 +2,7 @@
 
 ![green field](./test/uce-template-head.jpg)
 
-<sup>**Social Media Photo by [Andrew Seaman](https://unsplash.com/@amseaman) on [Unsplash](https://unsplash.com/)**</sup>
+<sup>**Social Media Photo by [Federico Bottos](https://unsplash.com/@landscapeplaces) on [Unsplash](https://unsplash.com/)**</sup>
 
 A tiny toolless library with tools included. **[Live demo](https://webreflection.github.io/uce-template/test/)**
 
