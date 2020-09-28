@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uce-template is a unicorn</title>
+  <script src="../index.js"></script>
+</head>
+<body>
+  <!-- multi times usage -->
+  <button is="rain-bow">
+    🦄 I am rainbow
+  </button>
+
+  <!-- definition -->
+  <template is="uce-template">
+    <button is="rain-bow">
+      {{this.toString()}}
+    </button>
+    <style>
+    button[is="rain-bow"] {
+      font-weight: bold;
+      background-color: #91d370;
+      background-image: linear-gradient(
+        319deg, #91d370 0%, #bca0ff 37%, #f2cd54 100%
+      );
+    }
+    </style>
+  </template>
+</body>
+</html>

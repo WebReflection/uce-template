@@ -103,21 +103,11 @@ function init(tried) {
     const params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
     const component = script && loader(content) || {};
     const {observedAttributes, props, setup} = component;
-    const definition = {props: null, extends: as ? name : 'element'};
-    if (css)
-      definition.style = () => css;
-    if (shadow)
-      definition.attachShadow = {mode: shadow};
-    if (observedAttributes) {
-      definition.observedAttributes = observedAttributes;
-      definition.attributeChanged = function () {
-        if (this.hasOwnProperty('attributeChanged'))
-          this.attributeChanged.apply(this, arguments);
-      };
-    }
-    if (script) {
-      const apply = !!(setup || template);
-      definition.init = function () {
+    const apply = !!(setup || template);
+    const definition = {
+      props: null,
+      extends: as ? name : 'element',
+      init() {
         let init = true;
         let context = null;
         let update = noop;
@@ -131,13 +121,26 @@ function init(tried) {
                 domHandler(self, props);
               context = setup && component.setup(self) || component;
               update = () => {
-                html.apply(self, params.call(self, context));
+                html.apply(self, params(self, context));
               };
             }
           }
           update();
         })());
+      }
+    };
+    if (css)
+      definition.style = () => css;
+    if (shadow)
+      definition.attachShadow = {mode: shadow};
+    if (observedAttributes) {
+      definition.observedAttributes = observedAttributes;
+      definition.attributeChanged = function () {
+        if (this.hasOwnProperty('attributeChanged'))
+          this.attributeChanged.apply(this, arguments);
       };
+    }
+    if (script) {
       definition.connected = function () {
         if (this.hasOwnProperty('connected'))
           this.connected();

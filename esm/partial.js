@@ -17,5 +17,5 @@ export default html => {
   const rest = Function(
     'return function(){with(arguments[0])return[' + values + ']}'
   )();
-  return object => args.concat(rest(object));
+  return (self, object) => args.concat(rest.call(self, object));
 };

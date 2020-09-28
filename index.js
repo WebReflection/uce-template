@@ -2315,8 +2315,8 @@
     template.push(html.slice(p));
     var args = [template];
     var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
-    return function (object) {
-      return args.concat(rest(object));
+    return function (self, object) {
+      return args.concat(rest.call(self, object));
     };
   });
 
@@ -2417,9 +2417,33 @@
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
+      var apply = !!(setup || template);
       var definition = {
         props: null,
-        "extends": as ? name : 'element'
+        "extends": as ? name : 'element',
+        init: function init() {
+          var init = true;
+          var context = null;
+          var update = noop$1;
+          var self = this;
+          var html = self.html;
+          self.render = augmentor(function () {
+            if (init) {
+              init = !init;
+
+              if (apply) {
+                if (props) domHandler(self, props);
+                context = setup && component.setup(self) || component;
+
+                update = function update() {
+                  html.apply(self, params(self, context));
+                };
+              }
+            }
+
+            update();
+          })();
+        }
       };
       if (css) definition.style = function () {
         return css;
@@ -2437,32 +2461,6 @@
       }
 
       if (script) {
-        var apply = !!(setup || template);
-
-        definition.init = function () {
-          var init = true;
-          var context = null;
-          var update = noop$1;
-          var self = this;
-          var html = self.html;
-          self.render = augmentor(function () {
-            if (init) {
-              init = !init;
-
-              if (apply) {
-                if (props) domHandler(self, props);
-                context = setup && component.setup(self) || component;
-
-                update = function update() {
-                  html.apply(self, params.call(self, context));
-                };
-              }
-            }
-
-            update();
-          })();
-        };
-
         definition.connected = function () {
           if (this.hasOwnProperty('connected')) this.connected();
         };
