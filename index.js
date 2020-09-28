@@ -2348,6 +2348,9 @@
     template.innerHTML = parts;
     return template;
   };
+
+  var noop$1 = function noop() {};
+
   var toBeDefined = new Map();
 
   var badTemplate = function badTemplate() {
@@ -2405,31 +2408,14 @@
 
   function init(tried) {
     var defineComponent = function defineComponent(content) {
-      var params = partial(template);
+      var params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
       var component = script && loader(content) || {};
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
       var definition = {
         props: null,
-        "extends": as ? name : 'element',
-        init: script ? function () {
-          var _this = this;
-
-          var self = this;
-          var html = self.html;
-          var init = true;
-          var context = null;
-          (this.render = augmentor(function () {
-            if (init) {
-              init = !init;
-              if (props) domHandler(self, props);
-              context = setup && component.setup(self) || {};
-            }
-
-            html.apply(null, params.call(_this, context));
-          }))();
-        } : function () {}
+        "extends": as ? name : 'element'
       };
       if (css) definition.style = function () {
         return css;
@@ -2447,6 +2433,25 @@
       }
 
       if (script) {
+        definition.init = function () {
+          var init = true;
+          var context = null;
+          var update = noop$1;
+          var self = this;
+          var html = self.html;
+          self.render = augmentor(function () {
+            if (init) {
+              init = !init;
+              if (props) domHandler(self, props);
+              if (setup && (context = component.setup(self))) update = function update() {
+                html.apply(self, params.call(self, context));
+              };
+            }
+
+            update();
+          })();
+        };
+
         definition.connected = function () {
           if (this.hasOwnProperty('connected')) this.connected();
         };

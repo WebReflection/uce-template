@@ -15,9 +15,10 @@
     <script type="module">
       import Promise from 'promise-helper';
       export default {
-        setup() {
+        setup(el) {
           new Promise($ => setTimeout($, 1000, 'it works'))
                 .then(console.log);
+          return el;
         }
       };
     </script>

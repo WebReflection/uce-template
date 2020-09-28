@@ -48,6 +48,7 @@ export const parse = parts => {
   return template;
 };
 
+const noop = () => {};
 const toBeDefined = new Map;
 const badTemplate = () => {
   throw new Error('bad template');
@@ -99,30 +100,10 @@ Template.from = parse;
 
 function init(tried) {
   const defineComponent = content => {
-    const params = partial(template);
+    const params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
     const component = script && loader(content) || {};
     const {observedAttributes, props, setup} = component;
-    const definition = {
-      props: null,
-      extends: as ? name : 'element',
-      init: script ?
-        function () {
-          const self = this;
-          const {html} = self;
-          let init = true;
-          let context = null;
-          (this.render = augmentor(() => {
-            if (init) {
-              init = !init;
-              if (props)
-                domHandler(self, props);
-              context = setup && component.setup(self) || {};
-            }
-            html.apply(null, params.call(this, context));
-          }))();
-        } :
-        function () {}
-    };
+    const definition = {props: null, extends: as ? name : 'element'};
     if (css)
       definition.style = () => css;
     if (shadow)
@@ -135,6 +116,25 @@ function init(tried) {
       };
     }
     if (script) {
+      definition.init = function () {
+        let init = true;
+        let context = null;
+        let update = noop;
+        const self = this;
+        const {html} = self;
+        (self.render = augmentor(() => {
+          if (init) {
+            init = !init;
+            if (props)
+              domHandler(self, props);
+            if (setup && (context = component.setup(self)))
+              update = () => {
+                html.apply(self, params.call(self, context));
+              };
+          }
+          update();
+        })());
+      };
       definition.connected = function () {
         if (this.hasOwnProperty('connected'))
           this.connected();

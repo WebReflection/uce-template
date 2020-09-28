@@ -158,6 +158,31 @@ Regarding **ShadowDOM**, its polyfill is not included in this project but it's p
 
 The `shadow` attribute is `open` by default, but it can also be specified as `shadow=closed`.
 
+#### The curious `<!--{{interpolation}}-->` case
+
+As everything in here is mostly based on standard *HTML* behavior, there are cases where an interpolation should be wrapped as comment.
+
+The rule of thumb is that if you don't see the layout, or you read some *Bad template* error, it is possible that your interpolation could've been swallowed by the *template* element.
+
+This happens mostly with elements such as **table**, **select**, and other elements that accept only a specific type of child node, but not text.
+
+```html
+<!-- 👎 this won't work as expected -->
+<table is="my-table">
+  <tbody>{{rows}}</tbody>
+</table>
+
+<!-- 👍 this works 🎉 -->
+<table is="my-table">
+  <tbody><!--{{rows}}--></tbody>
+</table>
+```
+
+In the first case, the `<tbody>` would ignore any node that is not a `<tr>` *except for comments*, because comments don't get swallowed, or lost, in the process.
+
+You can see the [dbmonster.html](./test/dbmonster.html) file definition for both the custom `<table>` and the custom `<tr>` component.
+
+
   </div>
 </details>
 
@@ -401,12 +426,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `EMp80YG1Ffg5J73PYoaSQN82qvDVqUYNJZnFpEs2FMQ=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `PC+gPx/t0bmWC8dRUx+cciSp1BdeLtvsH6v4Sw1yp48=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-EMp80YG1Ffg5J73PYoaSQN82qvDVqUYNJZnFpEs2FMQ="
+        integrity="sha256-PC+gPx/t0bmWC8dRUx+cciSp1BdeLtvsH6v4Sw1yp48="
         crossorigin="anonymous">
 </script>
 ```
@@ -699,7 +724,7 @@ As summary, instead of tricking the browser with practices that are as safe, or 
 
 This project is *as-performant-as* native Custom Elements could be, except for the definition cost, which is a *one-off* operation per each unique custom element *Class*, hence irrelevant in the long run, and there's an insignificant overhead within the initial template parsing logic, but its repeated execution is as fast as *uhtml* can be, and if you [check the latest status](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) you'll find it's one of the fastest of its kind.
 
-Soon to be published: a classic DBMonster demo/showcase, 'cause usually if that works fast enough, everything else would too 😉
+You can check the classic [DBMonster demo here](https://webreflection.github.io/uce-template/test/dbmonster.html), and see that it performs just well.
 
   </div>
 </details>

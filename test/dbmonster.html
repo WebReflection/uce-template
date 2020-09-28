@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <head>
+    <title>uhtml dbmonster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="dbmonster.css">
+    <script defer src="https://unpkg.com/perf-monitor@0.3.0/dist/umd/perf-monitor.js"></script>
+    <script defer src="dbmonster.js"></script>
+    <script defer src="../index.js"></script>
+  </head>
+  <body>
+    <div id="range"></div>
+    <div id="app">
+      <table is="db-monster" class="table table-striped latest-data"></table>
+    </div>
+    <div id="link">
+      You're looking at uhtml<br>
+      version of <a href="https://dbmonster.firebaseapp.com/">DBMonster</a>.
+    </div>
+
+    <template is="uce-template">
+      <tr is="db-monster-tr">
+        <td class="dbname">{{data.dbname}}</td>
+        <td class="query-count">
+          <span class={{data.lastSample.countClassName}}>
+            {{data.lastSample.nbQueries}}
+          </span>
+        </td>
+        <!--{{extras}}-->
+      </tr>
+      <script type="module">
+        import {html} from '@uce';
+        export default {
+          props: {data: {}},
+          setup(element) {
+            return {
+              get data() {
+                return element.data;
+              },
+              get extras() {
+                const {topFiveQueries} = element.data.lastSample;
+                return topFiveQueries.map((query, j, a) => html`
+                  <td class="${query.elapsedClassName}">
+                    <span class="foo">
+                      ${query.formatElapsed}
+                    </span>
+                    <div class="popover left">
+                      <div class="popover-content">
+                        ${query.query}
+                      </div>
+                      <div class="arrow"></div>
+                    </div>
+                  </td>`
+                );
+              }
+            };
+          }
+        };
+      </script>
+    </template>
+
+    <template is="uce-template">
+      <table is="db-monster">
+        <tbody><!--{{rows}}--></tbody>
+      </table>
+      <script type="module">
+        import {html, reactive} from '@uce';
+        export default {
+          setup() {
+            perfMonitor.startFPSMonitor();
+            perfMonitor.startMemMonitor();
+            const update = () => {
+              setTimeout(update, ENV.timeout);
+              const data = ENV.generateData().toArray();
+              perfMonitor.startProfile('view update');
+              state.data = data;
+              perfMonitor.endProfile('view update');
+            };
+            const state = reactive({ data: [] });
+            update();
+            return {
+              get rows() {
+                return state.data.map((db, i) => html`
+                  <tr is="db-monster-tr"
+                      key=${db.dbname}
+                      .data=${db} />
+                `);
+              }
+            };
+          }
+        };
+      </script>
+    </template>
+  </body>
+</html>
