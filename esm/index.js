@@ -108,25 +108,26 @@ function init(tried) {
       props: null,
       extends: as ? name : 'element',
       init() {
-        let init = true;
-        let context = null;
-        let update = noop;
         const self = this;
         const {html} = self;
-        (self.render = augmentor(() => {
+        let init = true;
+        let update = noop;
+        const render = augmentor(() => {
           if (init) {
             init = !init;
             if (apply) {
+              self.render = render;
               if (props)
                 domHandler(self, props);
-              context = setup && component.setup(self) || component;
+              const values = setup && component.setup(self) || component;
               update = () => {
-                html.apply(self, params(self, context));
+                html.apply(self, params(self, values));
               };
             }
           }
           update();
-        })());
+        });
+        render();
       }
     };
     if (css)

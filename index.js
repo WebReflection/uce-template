@@ -2422,27 +2422,28 @@
         props: null,
         "extends": as ? name : 'element',
         init: function init() {
-          var init = true;
-          var context = null;
-          var update = noop$1;
           var self = this;
           var html = self.html;
-          self.render = augmentor(function () {
+          var init = true;
+          var update = noop$1;
+          var render = augmentor(function () {
             if (init) {
               init = !init;
 
               if (apply) {
+                self.render = render;
                 if (props) domHandler(self, props);
-                context = setup && component.setup(self) || component;
+                var values = setup && component.setup(self) || component;
 
                 update = function update() {
-                  html.apply(self, params(self, context));
+                  html.apply(self, params(self, values));
                 };
               }
             }
 
             update();
-          })();
+          });
+          render();
         }
       };
       if (css) definition.style = function () {
