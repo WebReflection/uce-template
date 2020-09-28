@@ -128,7 +128,7 @@
                 });
               }
 
-            loop(_element.querySelectorAll(query), connected, query, set);
+            loop(querySelectorAll(_element), connected, query, set);
           }
 
           selectors = _selectors;
@@ -149,6 +149,10 @@
         loop(elements, connected, options.query);
       };
 
+      var querySelectorAll = function querySelectorAll(root) {
+        return query.length ? root.querySelectorAll(query) : query;
+      };
+
       var observer = new MutationObserver(callback);
       var root = options.root || document;
       var query = options.query;
@@ -156,7 +160,7 @@
         childList: true,
         subtree: true
       });
-      if (query.length) parse(root.querySelectorAll(query));
+      parse(querySelectorAll(root));
       return {
         drop: drop,
         flush: flush,
@@ -449,7 +453,7 @@
           return element;
         }
       });
-      defineProperty(Element.prototype, 'attachShadow', {
+      if (attachShadow) defineProperty(Element.prototype, 'attachShadow', {
         value: function value() {
           var root = attachShadow.apply(this, arguments);
 
