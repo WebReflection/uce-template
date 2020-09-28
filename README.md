@@ -1,6 +1,6 @@
 # <em>µ</em>ce-template
 
-![green field](./test/uce-template-head.jpg)
+![winter sky](./test/uce-template-head.jpg)
 
 <sup>**Social Media Photo by [Federico Bottos](https://unsplash.com/@landscapeplaces) on [Unsplash](https://unsplash.com/)**</sup>
 
@@ -158,7 +158,7 @@ Regarding **ShadowDOM**, its polyfill is not included in this project but it's p
 
 The `shadow` attribute is `open` by default, but it can also be specified as `shadow=closed`.
 
-#### The curious `<!--{{interpolation}}-->` case
+### The curious `<!--{{interpolation}}-->` case
 
 As everything in here is mostly based on standard *HTML* behavior, there are cases where an interpolation should be wrapped as comment.
 
