@@ -744,6 +744,13 @@ All this, plus the *import* to *require* resolution, is handled by the [uce-requ
 
 - - -
 
+## Live Demos
+
+  * a [todo app](https://github.com/WebReflection/vue-todo-2019) forked from the *Vue* version of [this post](https://medium.com/javascript-in-plain-english/i-created-the-exact-same-app-in-react-and-vue-here-are-the-differences-2019-edition-42ba2cab9e56)
+  * the classic [DB Monster](https://webreflection.github.io/uce-template/test/dbmonster.html) demo
+
+- - -
+
 
 ## ... and more!
 
