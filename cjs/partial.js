@@ -1,5 +1,5 @@
 'use strict';
-Object.defineProperty(exports, '__esModule', {value: true}).default = html => {
+module.exports = html => {
   const template = [];
   const values = [];
   const {length} = html;

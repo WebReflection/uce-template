@@ -7,6 +7,7 @@ export default {
   plugins: [
     includePaths({
       include: {
+        '@webreflection/lie': 'esm/promise.js',
         '@ungap/create-content': 'node_modules/@ungap/degap/create-content.js',
         '@ungap/custom-elements': 'node_modules/@ungap/degap/custom-elements.js'
       },
