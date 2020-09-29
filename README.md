@@ -363,7 +363,7 @@ loader({
       };
     }
     // when uce-template is loaded
-    else if (this.loaded) {
+    else if (this.Template) {
       // ignore loading uce-template itself
       if (component !== 'uce-template') {
         // load the component on demand
@@ -490,12 +490,11 @@ If `props` object is defined, and since *props** update the view automatically o
 <button is="my-btn"></button>
 <template is="uce-template">
   <button is="my-btn">
-    Clicked {{element.times}} times!
+    Clicked {{this.times}} times!
   </button>
   <script type="module">
     export default {
       props: {times: 0},
-      setup: element => ({element}),
       onClick() {
         this.times++;
       }
