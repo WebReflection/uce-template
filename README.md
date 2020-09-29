@@ -697,6 +697,17 @@ If you are targeting browsers you know already provide native Custom Elements V1
 
 The current `es.js` bundle is indeed *~7K* gzipped and *~6.5K* brotli, so that it's possible to save even extra bandwidth in your project.
 
+#### But my browser is Safari/WebKit ...
+
+Well, in such case if that's the only target browser, the [@webreflection/custom-elements-builtin](https://github.com/WebReflection/custom-elements-builtin#readme) module must be included *before* the *uce-template* module lands on the page.
+
+```html
+<script defer src="//unpkg.com/@webreflection/custom-elements-builtin"></script>
+<script defer src="//unpkg.com/uce-template"></script>
+```
+
+This will ensure both regular and builtin extends will work as expected.
+
   </div>
 </details>
 
