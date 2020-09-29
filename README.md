@@ -688,6 +688,18 @@ That's it: don't worry about any polyfill, because everything is already include
   </div>
 </details>
 
+
+<details>
+  <summary><strong>What if I target modern browsers only?</strong></summary>
+  <div>
+
+If you are targeting browsers you know already provide native Custom Elements V1, you can use [this ESM version](https://unpkg.com/uce-template@latest/es.js) that excludes all polyfills and include only the logic.
+
+The current `es.js` bundle is indeed *~7K* gzipped and *~6.5K* brotli, so that it's possible to save even extra bandwidth in your project.
+
+  </div>
+</details>
+
 <details>
   <summary><strong>Why there's no ShadowDOM polyfill?</strong></summary>
   <div>
