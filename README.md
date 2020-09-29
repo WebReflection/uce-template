@@ -689,6 +689,30 @@ That's it: don't worry about any polyfill, because everything is already include
 </details>
 
 <details>
+  <summary><strong>Why there's no ShadowDOM polyfill?</strong></summary>
+  <div>
+
+Unfortunately *ShadowDOM* is one of those specifications impossible to polyfill, but the good news is that you'll rarely need *ShadowDOM* in *uce-template*, but if your browser is compatible, you can use *ShadowDOM* as much as you like.
+
+*However*, there are at least two possible partial polyfills to consider: [attachshadow](https://github.com/WebReflection/attachshadow#readme), which is minimalistic and lightweight, and [ShadyDOM](https://github.com/webcomponents/polyfills/tree/master/packages/shadydom#readme), which is closer to standards, but definitively heavier, although both polyfills can, and should, be injected *only* if the current browser needs it, so sticking this code on top of your *HTML* page would bring *ShadowDOM* to IE11 too, or others.
+
+```html
+<!-- this must be done before uce-template -->
+<script>
+if(!document.documentElement.attachShadow)
+  document.write('<script src="//unpkg.com/attachshadow"><\x2fscript>');
+</script>
+<script defer src="//unpkg.com/uce-template"></script>
+```
+
+As every modern browser will have `document.documentElement.attachShadow`, the `document.write` will happen *only* in *IE11* without ever compromise, or penalize, Mobile and modern Desktop browsers.
+
+**P.S.** the `<\x2fscript>` is not a typo, it's needed to not have a broken layout due closing *script* tag
+
+  </div>
+</details>
+
+<details>
   <summary><strong>Why using <code>{{...}}</code> instead of <code>${...}</code>?</strong></summary>
   <div>
 
