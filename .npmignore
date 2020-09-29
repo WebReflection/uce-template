@@ -1,6 +1,8 @@
 .DS_Store
+.npmrc
 .nyc_output
 .travis.yml
+_config.yml
 node_modules/
 rollup/
 test/
