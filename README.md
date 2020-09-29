@@ -49,7 +49,7 @@ Add this library to the equation, and [see it bootstrapping](https://codepen.io/
   * optionally **shadow**ed `<custom-element shadow>` components, and optionally shadowed `<style shadow>` styles
   * a variety of pre-defined modules to import, including a virtual `@uce` module, to create reactive *UIs* and more
   * a runtime *ESM -> CommonJS* **module** system, where relative dependencies are [resolved (once) lazily](./extra-details.md#the-lazy-js-environment), but any imported [module can be pre-defined](./extra-details.md#the-module-js-environment) through the `resolve(name, module)` exported utility
-  * everything pre-bundled fits into *10K* gzipped budget, or *9K* via brotli 🦄
+  * everything pre-bundled fits into *10K* gzipped budget, or *9K* via brotli, but it's only *7K* gzip, and *6.5K* brotli in its *no-polyfills* version 🦄
 
 #### Goals
 
@@ -341,7 +341,7 @@ The same technique could be used directly on any *HTML* page, writing some code 
   <summary><strong>Lazy Loaded <code>uce-template</code></strong></summary>
   <div>
 
-If the majority of our pages don't use components at all, adding 10K+ of *JS* on top of each page might be undesired.
+If the majority of our pages don't use components at all, adding 7K+ of *JS* on top of each page might be undesired.
 
 However, we can follow the very same *Lazy Loaded Components* approach, except our loader will be in charge of bringing in also the *uce-template* library, either when an *uce-template* itself is found, or any other component.
 
@@ -677,7 +677,7 @@ Together with *lazy loaded component*, this approach makes it possible to ship c
   <summary><strong>Why is the polyfill included?</strong></summary>
   <div>
 
-As standalone file, my [Custom Elements](https://github.com/ungap/custom-elements#readme) size is around *2.1K*, but since it's share almost every library *uce* uses too, bundling it together looked like the best way to go, resulting in just *1K* extra for a module that fits in roughly *10K* budget.
+As standalone file, my [Custom Elements](https://github.com/ungap/custom-elements#readme) size is around *2.1K*, but since it's share almost every library *uce* uses too, bundling it together looked like the best way to go, resulting in just *1K* extra for a module that fits in roughly *7K* to *10K* budget.
 
 On the other hand, because the polyfill is not obtrusive and based on runtime features detections, this means that nobody should care about bringing any other polyfill ever, but also *Chrome*, *Firefox*, and *Edge*, will be untouched, so that every custom element will run natively, either builtin extend or regular.
 
