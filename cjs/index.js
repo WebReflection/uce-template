@@ -106,12 +106,20 @@ const Template = define(
 Template.resolve = resolve;
 Template.from = parse;
 
+const lazySetup = (fn, self, exports) => {
+  const module = {exports};
+  fn.call(self, module, exports);
+  const result = module.exports;
+  return result.default || result;
+};
+
 function init(tried) {
   const defineComponent = content => {
     const params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
-    const component = script && loader(content) || {};
+    const evaluate = isSetup ? ('module.exports=function(module,exports){"use strict";' + content + '}') : content;
+    const component = script && loader(evaluate) || {};
     const {observedAttributes, props, setup} = component;
-    const apply = !!(setup || template);
+    const apply = isSetup || !!(setup || template);
     const definition = {
       props: null,
       extends: as ? name : 'element',
@@ -127,7 +135,9 @@ function init(tried) {
               self.render = render;
               if (props)
                 domHandler(self, props);
-              const values = setup && component.setup(self) || component;
+              const values = isSetup ?
+                              lazySetup(component, self, {}) :
+                              (setup && component.setup(self) || component);
               update = () => {
                 html.apply(self, params(self, values));
               };
@@ -175,6 +185,7 @@ function init(tried) {
     parentNode.removeChild(this);
 
   let later = defineComponent;
+  let isSetup = false;
   let as = '';
   let css = '';
   let name = '';
@@ -201,6 +212,7 @@ function init(tried) {
       else if (/^script$/i.test(tagName)) {
         if (script)
           badTemplate();
+        isSetup = child.hasAttribute('setup');
         script = child.textContent;
         later = () => {
           asCJS(script, true).then(defineComponent);

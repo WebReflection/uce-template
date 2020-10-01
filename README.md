@@ -231,6 +231,31 @@ The `@uce` *reactive* helper makes it possible to automatically update the view 
 
 To know more about reactive changes, please [read this Medium post](https://medium.com/@WebReflection/reactive-state-for-data-dom-78332ddafd0e).
 
+### The `setup` attribute
+
+If a `<script type="module" setup>` is found, the content of the script is invoked with the element itself as context.
+
+This shortcut is specially handy for components that don't need to setup *props* or *observedAttributes*.
+
+[Live demo](https://webreflection.github.io/uce-template/test/setup.html)
+
+```html
+<x-clock></x-clock>
+<template is="uce-template">
+  <x-clock>{{time}}</x-clock>
+  <script type="module" setup>
+    let id = 0;
+    export default {
+      get time() {
+        return (new Date).toISOString();
+      }
+    };
+    this.connected = e => id = setInterval(this.render, 1000 / 30);
+    this.disconnected = e => clearInterval(id);
+  </script>
+</template>
+```
+
   </div>
 </details>
 
@@ -426,12 +451,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `rCkn11GLrRaRnD61TaSF21FUgqXgT6URlfem5FD8opg=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `vmCKzrNPUKqAa3w5cSaKzNFeaMmJGg6SDFqwWv7Maiw=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-rCkn11GLrRaRnD61TaSF21FUgqXgT6URlfem5FD8opg="
+        integrity="sha256-vmCKzrNPUKqAa3w5cSaKzNFeaMmJGg6SDFqwWv7Maiw="
         crossorigin="anonymous">
 </script>
 ```

@@ -2410,14 +2410,24 @@
   Template.resolve = resolve;
   Template.from = parse;
 
+  var lazySetup = function lazySetup(fn, self, exports) {
+    var module = {
+      exports: exports
+    };
+    fn.call(self, module, exports);
+    var result = module.exports;
+    return result["default"] || result;
+  };
+
   function init(tried) {
     var defineComponent = function defineComponent(content) {
       var params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
-      var component = script && loader(content) || {};
+      var evaluate = isSetup ? 'module.exports=function(module,exports){"use strict";' + content + '}' : content;
+      var component = script && loader(evaluate) || {};
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
-      var apply = !!(setup || template);
+      var apply = isSetup || !!(setup || template);
       var definition = {
         props: null,
         "extends": as ? name : 'element',
@@ -2433,7 +2443,7 @@
               if (apply) {
                 self.render = render;
                 if (props) domHandler(self, props);
-                var values = setup && component.setup(self) || component;
+                var values = isSetup ? lazySetup(component, self, {}) : setup && component.setup(self) || component;
 
                 update = function update() {
                   html.apply(self, params(self, values));
@@ -2489,6 +2499,7 @@
 
     if (parentNode && this instanceof HTMLUnknownElement) parentNode.removeChild(this);
     var later = defineComponent;
+    var isSetup = false;
     var as = '';
     var css = '';
     var name = '';
@@ -2510,6 +2521,7 @@
           if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
         } else if (/^script$/i.test(tagName)) {
           if (script) badTemplate();
+          isSetup = child.hasAttribute('setup');
           script = child.textContent;
 
           later = function later() {
