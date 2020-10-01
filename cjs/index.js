@@ -57,12 +57,19 @@ const parse = parts => {
 exports.parse = parse;
 
 const toBeDefined = new Map;
+const wrapSetup = [
+  'module.exports=function(module,exports){"use strict";',
+  '}'
+];
 
 const noop = () => {};
 
 const badTemplate = () => {
   throw new Error('bad template');
 };
+
+const get = (child, name) => child.getAttribute(name);
+const has = (child, name) => child.hasAttribute(name);
 
 const lazySetup = (fn, self, props, exports) => {
   const module = {exports};
@@ -81,7 +88,7 @@ const virtualNameSpace = {
   slot: element => [].reduce.call(
     element.querySelectorAll('[slot]'),
     (slot, node) => {
-      const name = node.getAttribute('slot');
+      const name = get(node, 'slot');
       slot[name] = [].concat(slot[name] || [], node);
       return slot;
     },
@@ -119,10 +126,11 @@ Template.resolve = resolve;
 Template.from = parse;
 
 function init(tried) {
-  const defineComponent = content => {
-    const params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
-    const evaluate = isSetup ? ('module.exports=function(module,exports){"use strict";' + content + '}') : content;
-    const component = script && loader(evaluate) || {};
+  const defineComponent = $ => {
+    const params = partial(
+      template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3')
+    );
+    const component = script && loader(isSetup ? wrapSetup.join($) : $) || {};
     const {observedAttributes, props, setup} = component;
     const apply = isSetup || !!(setup || template);
     const definition = {
@@ -202,7 +210,7 @@ function init(tried) {
     const child = childNodes[i];
     if (child.nodeType === 1) {
       const {tagName} = child;
-      const is = child.hasAttribute('is');
+      const is = has(child, 'is');
       if (/^style$/i.test(tagName))
         styles.push(child);
       else if (is || /-/i.test(tagName)) {
@@ -211,15 +219,15 @@ function init(tried) {
         name = tagName.toLowerCase();
         template = child.innerHTML;
         if (is)
-          as = child.getAttribute('is').toLowerCase();
-        if (child.hasAttribute('shadow'))
-          shadow = child.getAttribute('shadow') || 'open';
+          as = get(child, 'is').toLowerCase();
+        if (has(child, 'shadow'))
+          shadow = get(child, 'shadow') || 'open';
       }
       else if (/^script$/i.test(tagName)) {
         if (script)
           badTemplate();
-        isSetup = child.hasAttribute('setup');
-        isProps = isSetup && child.getAttribute('setup') === 'props';
+        isSetup = has(child, 'setup');
+        isProps = isSetup && get(child, 'setup') === 'props';
         script = child.textContent;
         later = () => {
           asCJS(script, true).then(defineComponent);
@@ -233,9 +241,9 @@ function init(tried) {
   for (let i = styles.length; i--;) {
     const child = styles[i];
     const {textContent} = child;
-    if (child.hasAttribute('shadow'))
+    if (has(child, 'shadow'))
       template = '<style>' + textContent + '</style>' + template;
-    else if (child.hasAttribute('scoped')) {
+    else if (has(child, 'scoped')) {
       const def = [];
       css += textContent.replace(
               /\{([^}]+?)\}/g,
@@ -250,7 +258,7 @@ function init(tried) {
     else
       css += textContent;
   }
-  if (this.hasAttribute('lazy')) {
+  if (has(this, 'lazy')) {
     toBeDefined.set(selector, later);
     query.push(selector);
     parseQSAO(ownerDocument.querySelectorAll(query));

@@ -2353,11 +2353,20 @@
     return template;
   };
   var toBeDefined = new Map();
+  var wrapSetup = ['module.exports=function(module,exports){"use strict";', '}'];
 
   var noop$1 = function noop() {};
 
   var badTemplate = function badTemplate() {
     throw new Error('bad template');
+  };
+
+  var get = function get(child, name) {
+    return child.getAttribute(name);
+  };
+
+  var has = function has(child, name) {
+    return child.hasAttribute(name);
   };
 
   var lazySetup = function lazySetup(fn, self, props, exports) {
@@ -2383,7 +2392,7 @@
     }),
     slot: function slot(element) {
       return [].reduce.call(element.querySelectorAll('[slot]'), function (slot, node) {
-        var name = node.getAttribute('slot');
+        var name = get(node, 'slot');
         slot[name] = [].concat(slot[name] || [], node);
         return slot;
       }, {});
@@ -2421,10 +2430,9 @@
   Template.from = parse;
 
   function init(tried) {
-    var defineComponent = function defineComponent(content) {
+    var defineComponent = function defineComponent($) {
       var params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
-      var evaluate = isSetup ? 'module.exports=function(module,exports){"use strict";' + content + '}' : content;
-      var component = script && loader(evaluate) || {};
+      var component = script && loader(isSetup ? wrapSetup.join($) : $) || {};
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
@@ -2514,17 +2522,17 @@
 
       if (child.nodeType === 1) {
         var tagName = child.tagName;
-        var is = child.hasAttribute('is');
+        var is = has(child, 'is');
         if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
           if (name) badTemplate();
           name = tagName.toLowerCase();
           template = child.innerHTML;
-          if (is) as = child.getAttribute('is').toLowerCase();
-          if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
+          if (is) as = get(child, 'is').toLowerCase();
+          if (has(child, 'shadow')) shadow = get(child, 'shadow') || 'open';
         } else if (/^script$/i.test(tagName)) {
           if (script) badTemplate();
-          isSetup = child.hasAttribute('setup');
-          isProps = isSetup && child.getAttribute('setup') === 'props';
+          isSetup = has(child, 'setup');
+          isProps = isSetup && get(child, 'setup') === 'props';
           script = child.textContent;
 
           later = function later() {
@@ -2540,7 +2548,7 @@
     for (var _i = styles.length; _i--;) {
       var _child = styles[_i];
       var textContent = _child.textContent;
-      if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
+      if (has(_child, 'shadow')) template = '<style>' + textContent + '</style>' + template;else if (has(_child, 'scoped')) {
         (function () {
           var def = [];
           css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
@@ -2554,7 +2562,7 @@
       } else css += textContent;
     }
 
-    if (this.hasAttribute('lazy')) {
+    if (has(this, 'lazy')) {
       toBeDefined.set(selector, later);
       query.push(selector);
       parseQSAO(ownerDocument.querySelectorAll(query));
