@@ -235,8 +235,6 @@ To know more about reactive changes, please [read this Medium post](https://medi
 
 If a `<script type="module" setup>` is found, the content of the script is invoked with the element itself as context.
 
-This shortcut is specially handy for components that don't need to setup *props* or *observedAttributes*.
-
 [Live demo](https://webreflection.github.io/uce-template/test/setup.html)
 
 ```html
@@ -254,6 +252,18 @@ This shortcut is specially handy for components that don't need to setup *props*
     this.disconnected = e => clearInterval(id);
   </script>
 </template>
+```
+
+This shortcut is specially handy for components that don't need to setup *observedAttributes* but might need to setup *props*, and for the latter case, the `setup` attribute should contain `props`.
+
+```html
+<script type="module" setup="props">
+  // props are defined as key => defaultValue pairs
+  export const props = {
+    name: this.name || 'anonymous',
+    age: +this.age || 0
+  };
+</script>
 ```
 
   </div>
@@ -451,12 +461,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `vmCKzrNPUKqAa3w5cSaKzNFeaMmJGg6SDFqwWv7Maiw=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `ApG+cz2i8bBYopLBNWFiwifROwWRrwHWbAFnXW91kNM=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-vmCKzrNPUKqAa3w5cSaKzNFeaMmJGg6SDFqwWv7Maiw="
+        integrity="sha256-ApG+cz2i8bBYopLBNWFiwifROwWRrwHWbAFnXW91kNM="
         crossorigin="anonymous">
 </script>
 ```

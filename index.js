@@ -2352,13 +2352,23 @@
     template.innerHTML = parts;
     return template;
   };
+  var toBeDefined = new Map();
 
   var noop$1 = function noop() {};
 
-  var toBeDefined = new Map();
-
   var badTemplate = function badTemplate() {
     throw new Error('bad template');
+  };
+
+  var lazySetup = function lazySetup(fn, self, props, exports) {
+    var module = {
+      exports: exports
+    };
+    fn.call(self, module, exports);
+    var result = module.exports;
+    var out = result["default"] || result;
+    if (props) domHandler(self, out.props);
+    return out;
   }; // preloaded imports
 
 
@@ -2410,15 +2420,6 @@
   Template.resolve = resolve;
   Template.from = parse;
 
-  var lazySetup = function lazySetup(fn, self, exports) {
-    var module = {
-      exports: exports
-    };
-    fn.call(self, module, exports);
-    var result = module.exports;
-    return result["default"] || result;
-  };
-
   function init(tried) {
     var defineComponent = function defineComponent(content) {
       var params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
@@ -2443,7 +2444,7 @@
               if (apply) {
                 self.render = render;
                 if (props) domHandler(self, props);
-                var values = isSetup ? lazySetup(component, self, {}) : setup && component.setup(self) || component;
+                var values = isSetup ? lazySetup(component, self, isProps, {}) : setup && component.setup(self) || component;
 
                 update = function update() {
                   html.apply(self, params(self, values));
@@ -2500,6 +2501,7 @@
     if (parentNode && this instanceof HTMLUnknownElement) parentNode.removeChild(this);
     var later = defineComponent;
     var isSetup = false;
+    var isProps = false;
     var as = '';
     var css = '';
     var name = '';
@@ -2522,6 +2524,7 @@
         } else if (/^script$/i.test(tagName)) {
           if (script) badTemplate();
           isSetup = child.hasAttribute('setup');
+          isProps = isSetup && child.getAttribute('setup') === 'props';
           script = child.textContent;
 
           later = function later() {

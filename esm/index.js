@@ -48,10 +48,22 @@ export const parse = parts => {
   return template;
 };
 
-const noop = () => {};
 const toBeDefined = new Map;
+
+const noop = () => {};
+
 const badTemplate = () => {
   throw new Error('bad template');
+};
+
+const lazySetup = (fn, self, props, exports) => {
+  const module = {exports};
+  fn.call(self, module, exports);
+  const result = module.exports;
+  const out = result.default || result;
+  if (props)
+    domHandler(self, out.props);
+  return out;
 };
 
 // preloaded imports
@@ -98,13 +110,6 @@ const Template = define(
 Template.resolve = resolve;
 Template.from = parse;
 
-const lazySetup = (fn, self, exports) => {
-  const module = {exports};
-  fn.call(self, module, exports);
-  const result = module.exports;
-  return result.default || result;
-};
-
 function init(tried) {
   const defineComponent = content => {
     const params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
@@ -128,7 +133,7 @@ function init(tried) {
               if (props)
                 domHandler(self, props);
               const values = isSetup ?
-                              lazySetup(component, self, {}) :
+                              lazySetup(component, self, isProps, {}) :
                               (setup && component.setup(self) || component);
               update = () => {
                 html.apply(self, params(self, values));
@@ -178,6 +183,7 @@ function init(tried) {
 
   let later = defineComponent;
   let isSetup = false;
+  let isProps = false;
   let as = '';
   let css = '';
   let name = '';
@@ -205,6 +211,7 @@ function init(tried) {
         if (script)
           badTemplate();
         isSetup = child.hasAttribute('setup');
+        isProps = isSetup && child.getAttribute('setup') === 'props';
         script = child.textContent;
         later = () => {
           asCJS(script, true).then(defineComponent);
