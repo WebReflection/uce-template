@@ -2475,18 +2475,21 @@
       if (observedAttributes) {
         definition.observedAttributes = observedAttributes;
 
-        definition.attributeChanged = function () {
-          if (this.hasOwnProperty('attributeChanged')) this.attributeChanged.apply(this, arguments);
+        var aC = definition.attributeChanged = function () {
+          var attributeChanged = this.attributeChanged;
+          if (attributeChanged !== aC) attributeChanged.apply(this, arguments);
         };
       }
 
       if (script) {
-        definition.connected = function () {
-          if (this.hasOwnProperty('connected')) this.connected();
+        var c = definition.connected = function () {
+          var connected = this.connected;
+          if (connected !== c) connected.call(this);
         };
 
-        definition.disconnected = function () {
-          if (this.hasOwnProperty('disconnected')) this.disconnected();
+        var d = definition.disconnected = function () {
+          var disconnected = this.disconnected;
+          if (disconnected !== d) disconnected.call(this);
         };
       }
 

@@ -167,19 +167,22 @@ function init(tried) {
       definition.attachShadow = {mode: shadow};
     if (observedAttributes) {
       definition.observedAttributes = observedAttributes;
-      definition.attributeChanged = function () {
-        if (this.hasOwnProperty('attributeChanged'))
-          this.attributeChanged.apply(this, arguments);
+      const aC = definition.attributeChanged = function () {
+        const {attributeChanged} = this;
+        if (attributeChanged !== aC)
+          attributeChanged.apply(this, arguments);
       };
     }
     if (script) {
-      definition.connected = function () {
-        if (this.hasOwnProperty('connected'))
-          this.connected();
+      const c = definition.connected = function () {
+        const {connected} = this;
+        if (connected !== c)
+          connected.call(this);
       };
-      definition.disconnected = function () {
-        if (this.hasOwnProperty('disconnected'))
-          this.disconnected();
+      const d = definition.disconnected = function () {
+        const {disconnected} = this;
+        if (disconnected !== d)
+          disconnected.call(this);
       };
     }
     for (const key in component) {
