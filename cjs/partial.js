@@ -18,5 +18,7 @@ module.exports = html => {
   const rest = Function(
     'return function(){with(arguments[0])return[' + values + ']}'
   )();
-  return (self, object) => args.concat(rest.call(self, object));
+  return function (object) {
+    return args.concat(rest.call(this, object));
+  };
 };

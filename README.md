@@ -123,7 +123,7 @@ See this [live example](https://codepen.io/WebReflection/pen/OJNdZPB?editors=100
 
 Each "*component*" might define itself with, or without, its own static, or dynamic, content.
 
-Such *content* will be used to render each custom element once "*mounted*" (live) and per each reactive state change.
+Such *content* will be used to render each custom element once "*mounted*" (live) and per each reactive state change, but *only* if the template is not an empty one.
 
 All **dynamic parts** must be wrapped within `{{dynamic}}` curly brackets as shown here:
 
@@ -461,12 +461,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `ru3v348vTXbJYS7EtShAz9z1vZAGAm9T/IGHPcuWK7A=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `3sQ4J+FA8wRNd4IrJ6/b9tLG+F+AgrYb9TyfJQSHGyw=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-ru3v348vTXbJYS7EtShAz9z1vZAGAm9T/IGHPcuWK7A="
+        integrity="sha256-3sQ4J+FA8wRNd4IrJ6/b9tLG+F+AgrYb9TyfJQSHGyw="
         crossorigin="anonymous">
 </script>
 ```
@@ -542,6 +542,32 @@ The advantage of using props is that it's possible to define an initial state th
 
 ```html
 <button is="my-btn" times="3"></button>
+```
+
+  </div>
+</details>
+
+<details>
+  <summary><strong>Multiple refs</strong></summary>
+  <div>
+
+The `import {ref} from '@uce'` helper simplifies retrieval of node by `ref="name"` attribute.
+
+```html
+<element-details>
+  <span ref="name"></span>
+  <span ref="description"></span>
+</element-details>
+
+<template is="uce-template">
+  <element-details></element-details>
+  <script type="module" setup>
+    import {ref} from '@uce';
+    const {name, description} = ref(this);
+    name.textContent = 'element name';
+    description.textContent = 'element description';
+  </script>
+</template>
 ```
 
   </div>

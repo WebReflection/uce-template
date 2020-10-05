@@ -73,19 +73,22 @@ const lazySetup = (fn, self, props, exports) => {
   return out;
 };
 
+const queryHelper = (attr, arr) => element => [].reduce.call(
+  element.querySelectorAll('[' + attr + ']'),
+  (slot, node) => {
+    const name = get(node, attr);
+    slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+    return slot;
+  },
+  {}
+);
+
 // preloaded imports
 const virtualNameSpace = {
   define, render, html, svg, css,
   reactive: stateHandler({useState}),
-  slot: element => [].reduce.call(
-    element.querySelectorAll('[slot]'),
-    (slot, node) => {
-      const name = get(node, 'slot');
-      slot[name] = [].concat(slot[name] || [], node);
-      return slot;
-    },
-    {}
-  )
+  ref: queryHelper('ref', false),
+  slot: queryHelper('slot', true)
 };
 
 // deprecated? namespace
@@ -124,7 +127,8 @@ function init(tried) {
     );
     const component = script && loader(isSetup ? wrapSetup.join($) : $) || {};
     const {observedAttributes, props, setup} = component;
-    const apply = isSetup || !!(setup || template);
+    const hasTemplate = !!template.trim();
+    const apply = isSetup || hasTemplate || !!setup;
     const definition = {
       props: null,
       extends: as ? name : 'element',
@@ -142,10 +146,13 @@ function init(tried) {
                 domHandler(self, props);
               const values = isSetup ?
                               lazySetup(component, self, isProps, {}) :
-                              (setup && component.setup(self) || component);
-              update = () => {
-                html.apply(self, params(self, values));
-              };
+                              (setup && component.setup(self));
+              if (hasTemplate) {
+                const args = params.bind(self, values || {});
+                update = () => {
+                  html.apply(self, args());
+                };
+              }
             }
           }
           update();
