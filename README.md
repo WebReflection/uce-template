@@ -1,5 +1,7 @@
 # <em>µ</em>ce-template
 
+[![Downloads](https://img.shields.io/npm/dm/uce-template.svg)](https://www.npmjs.com/package/uce-template)
+
 ![winter sky](./test/uce-template-head.jpg)
 
 <sup>**Social Media Photo by [Federico Bottos](https://unsplash.com/@landscapeplaces) on [Unsplash](https://unsplash.com/)**</sup>
