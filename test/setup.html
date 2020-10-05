@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>script setup</title>
+  <script defer src=../index.js></script>
+</head>
+<body>
+  <x-clock></x-clock>
+  <template is="uce-template">
+    <x-clock>{{time}}</x-clock>
+    <script type="module" setup>
+      let id = 0;
+      export default {
+        get time() {
+          return (new Date).toISOString();
+        }
+      };
+      this.connected = e => id = setInterval(this.render, 1000 / 30);
+      this.disconnected = e => clearInterval(id);
+    </script>
+  </template>
+</body>
+</html>

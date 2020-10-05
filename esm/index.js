@@ -48,10 +48,29 @@ export const parse = parts => {
   return template;
 };
 
-const noop = () => {};
 const toBeDefined = new Map;
+const wrapSetup = [
+  'module.exports=function(module,exports){"use strict";',
+  '}'
+];
+
+const noop = () => {};
+
 const badTemplate = () => {
   throw new Error('bad template');
+};
+
+const get = (child, name) => child.getAttribute(name);
+const has = (child, name) => child.hasAttribute(name);
+
+const lazySetup = (fn, self, props, exports) => {
+  const module = {exports};
+  fn.call(self, module, exports);
+  const result = module.exports;
+  const out = result.default || result;
+  if (props)
+    domHandler(self, out.props);
+  return out;
 };
 
 // preloaded imports
@@ -61,7 +80,7 @@ const virtualNameSpace = {
   slot: element => [].reduce.call(
     element.querySelectorAll('[slot]'),
     (slot, node) => {
-      const name = node.getAttribute('slot');
+      const name = get(node, 'slot');
       slot[name] = [].concat(slot[name] || [], node);
       return slot;
     },
@@ -99,11 +118,13 @@ Template.resolve = resolve;
 Template.from = parse;
 
 function init(tried) {
-  const defineComponent = content => {
-    const params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
-    const component = script && loader(content) || {};
+  const defineComponent = $ => {
+    const params = partial(
+      template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3')
+    );
+    const component = script && loader(isSetup ? wrapSetup.join($) : $) || {};
     const {observedAttributes, props, setup} = component;
-    const apply = !!(setup || template);
+    const apply = isSetup || !!(setup || template);
     const definition = {
       props: null,
       extends: as ? name : 'element',
@@ -119,7 +140,9 @@ function init(tried) {
               self.render = render;
               if (props)
                 domHandler(self, props);
-              const values = setup && component.setup(self) || component;
+              const values = isSetup ?
+                              lazySetup(component, self, isProps, {}) :
+                              (setup && component.setup(self) || component);
               update = () => {
                 html.apply(self, params(self, values));
               };
@@ -136,19 +159,22 @@ function init(tried) {
       definition.attachShadow = {mode: shadow};
     if (observedAttributes) {
       definition.observedAttributes = observedAttributes;
-      definition.attributeChanged = function () {
-        if (this.hasOwnProperty('attributeChanged'))
-          this.attributeChanged.apply(this, arguments);
+      const aC = definition.attributeChanged = function () {
+        const {attributeChanged} = this;
+        if (attributeChanged !== aC)
+          attributeChanged.apply(this, arguments);
       };
     }
     if (script) {
-      definition.connected = function () {
-        if (this.hasOwnProperty('connected'))
-          this.connected();
+      const c = definition.connected = function () {
+        const {connected} = this;
+        if (connected !== c)
+          connected.call(this);
       };
-      definition.disconnected = function () {
-        if (this.hasOwnProperty('disconnected'))
-          this.disconnected();
+      const d = definition.disconnected = function () {
+        const {disconnected} = this;
+        if (disconnected !== d)
+          disconnected.call(this);
       };
     }
     for (const key in component) {
@@ -167,6 +193,8 @@ function init(tried) {
     parentNode.removeChild(this);
 
   let later = defineComponent;
+  let isSetup = false;
+  let isProps = false;
   let as = '';
   let css = '';
   let name = '';
@@ -177,7 +205,7 @@ function init(tried) {
     const child = childNodes[i];
     if (child.nodeType === 1) {
       const {tagName} = child;
-      const is = child.hasAttribute('is');
+      const is = has(child, 'is');
       if (/^style$/i.test(tagName))
         styles.push(child);
       else if (is || /-/i.test(tagName)) {
@@ -186,13 +214,15 @@ function init(tried) {
         name = tagName.toLowerCase();
         template = child.innerHTML;
         if (is)
-          as = child.getAttribute('is').toLowerCase();
-        if (child.hasAttribute('shadow'))
-          shadow = child.getAttribute('shadow') || 'open';
+          as = get(child, 'is').toLowerCase();
+        if (has(child, 'shadow'))
+          shadow = get(child, 'shadow') || 'open';
       }
       else if (/^script$/i.test(tagName)) {
         if (script)
           badTemplate();
+        isSetup = has(child, 'setup');
+        isProps = isSetup && get(child, 'setup') === 'props';
         script = child.textContent;
         later = () => {
           asCJS(script, true).then(defineComponent);
@@ -206,9 +236,9 @@ function init(tried) {
   for (let i = styles.length; i--;) {
     const child = styles[i];
     const {textContent} = child;
-    if (child.hasAttribute('shadow'))
+    if (has(child, 'shadow'))
       template = '<style>' + textContent + '</style>' + template;
-    else if (child.hasAttribute('scoped')) {
+    else if (has(child, 'scoped')) {
       const def = [];
       css += textContent.replace(
               /\{([^}]+?)\}/g,
@@ -223,7 +253,7 @@ function init(tried) {
     else
       css += textContent;
   }
-  if (this.hasAttribute('lazy')) {
+  if (has(this, 'lazy')) {
     toBeDefined.set(selector, later);
     query.push(selector);
     parseQSAO(ownerDocument.querySelectorAll(query));

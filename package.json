@@ -1,6 +1,6 @@
 {
   "name": "uce-template",
-  "version": "0.1.42",
+  "version": "0.2.4",
   "description": "A tiny toolless library with tools included",
   "bin": "./bin/index.js",
   "main": "./cjs/index.js",
@@ -52,8 +52,8 @@
     "csso": "^4.0.3",
     "html-minifier-terser": "^5.1.1",
     "qsa-observer": "^1.1.6",
-    "terser": "^5.3.3",
-    "uce": "^1.11.4",
+    "terser": "^5.3.4",
+    "uce": "^1.11.6",
     "uce-require": "^0.1.9"
   }
 }

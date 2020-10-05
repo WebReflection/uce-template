@@ -2352,13 +2352,32 @@
     template.innerHTML = parts;
     return template;
   };
+  var toBeDefined = new Map();
+  var wrapSetup = ['module.exports=function(module,exports){"use strict";', '}'];
 
   var noop$1 = function noop() {};
 
-  var toBeDefined = new Map();
-
   var badTemplate = function badTemplate() {
     throw new Error('bad template');
+  };
+
+  var get = function get(child, name) {
+    return child.getAttribute(name);
+  };
+
+  var has = function has(child, name) {
+    return child.hasAttribute(name);
+  };
+
+  var lazySetup = function lazySetup(fn, self, props, exports) {
+    var module = {
+      exports: exports
+    };
+    fn.call(self, module, exports);
+    var result = module.exports;
+    var out = result["default"] || result;
+    if (props) domHandler(self, out.props);
+    return out;
   }; // preloaded imports
 
 
@@ -2373,7 +2392,7 @@
     }),
     slot: function slot(element) {
       return [].reduce.call(element.querySelectorAll('[slot]'), function (slot, node) {
-        var name = node.getAttribute('slot');
+        var name = get(node, 'slot');
         slot[name] = [].concat(slot[name] || [], node);
         return slot;
       }, {});
@@ -2411,13 +2430,13 @@
   Template.from = parse;
 
   function init(tried) {
-    var defineComponent = function defineComponent(content) {
+    var defineComponent = function defineComponent($) {
       var params = partial(template.replace(/(<!--(\{\{)|(\}\})-->)/g, '$2$3'));
-      var component = script && loader(content) || {};
+      var component = script && loader(isSetup ? wrapSetup.join($) : $) || {};
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
-      var apply = !!(setup || template);
+      var apply = isSetup || !!(setup || template);
       var definition = {
         props: null,
         "extends": as ? name : 'element',
@@ -2433,7 +2452,7 @@
               if (apply) {
                 self.render = render;
                 if (props) domHandler(self, props);
-                var values = setup && component.setup(self) || component;
+                var values = isSetup ? lazySetup(component, self, isProps, {}) : setup && component.setup(self) || component;
 
                 update = function update() {
                   html.apply(self, params(self, values));
@@ -2456,18 +2475,21 @@
       if (observedAttributes) {
         definition.observedAttributes = observedAttributes;
 
-        definition.attributeChanged = function () {
-          if (this.hasOwnProperty('attributeChanged')) this.attributeChanged.apply(this, arguments);
+        var aC = definition.attributeChanged = function () {
+          var attributeChanged = this.attributeChanged;
+          if (attributeChanged !== aC) attributeChanged.apply(this, arguments);
         };
       }
 
       if (script) {
-        definition.connected = function () {
-          if (this.hasOwnProperty('connected')) this.connected();
+        var c = definition.connected = function () {
+          var connected = this.connected;
+          if (connected !== c) connected.call(this);
         };
 
-        definition.disconnected = function () {
-          if (this.hasOwnProperty('disconnected')) this.disconnected();
+        var d = definition.disconnected = function () {
+          var disconnected = this.disconnected;
+          if (disconnected !== d) disconnected.call(this);
         };
       }
 
@@ -2489,6 +2511,8 @@
 
     if (parentNode && this instanceof HTMLUnknownElement) parentNode.removeChild(this);
     var later = defineComponent;
+    var isSetup = false;
+    var isProps = false;
     var as = '';
     var css = '';
     var name = '';
@@ -2501,15 +2525,17 @@
 
       if (child.nodeType === 1) {
         var tagName = child.tagName;
-        var is = child.hasAttribute('is');
+        var is = has(child, 'is');
         if (/^style$/i.test(tagName)) styles.push(child);else if (is || /-/i.test(tagName)) {
           if (name) badTemplate();
           name = tagName.toLowerCase();
           template = child.innerHTML;
-          if (is) as = child.getAttribute('is').toLowerCase();
-          if (child.hasAttribute('shadow')) shadow = child.getAttribute('shadow') || 'open';
+          if (is) as = get(child, 'is').toLowerCase();
+          if (has(child, 'shadow')) shadow = get(child, 'shadow') || 'open';
         } else if (/^script$/i.test(tagName)) {
           if (script) badTemplate();
+          isSetup = has(child, 'setup');
+          isProps = isSetup && get(child, 'setup') === 'props';
           script = child.textContent;
 
           later = function later() {
@@ -2525,7 +2551,7 @@
     for (var _i = styles.length; _i--;) {
       var _child = styles[_i];
       var textContent = _child.textContent;
-      if (_child.hasAttribute('shadow')) template = '<style>' + textContent + '</style>' + template;else if (_child.hasAttribute('scoped')) {
+      if (has(_child, 'shadow')) template = '<style>' + textContent + '</style>' + template;else if (has(_child, 'scoped')) {
         (function () {
           var def = [];
           css += textContent.replace(/\{([^}]+?)\}/g, function (_, $1) {
@@ -2539,7 +2565,7 @@
       } else css += textContent;
     }
 
-    if (this.hasAttribute('lazy')) {
+    if (has(this, 'lazy')) {
       toBeDefined.set(selector, later);
       query.push(selector);
       parseQSAO(ownerDocument.querySelectorAll(query));
