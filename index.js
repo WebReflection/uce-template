@@ -1919,43 +1919,6 @@
         this[retype[event.type]](event);
       }
     };
-
-    if (props !== null) {
-      if (props) {
-        var _loop = function _loop(_k, _i) {
-          var key = _k[_i];
-          proto[key] = {
-            get: function get() {
-              bootstrap(this);
-              return props[key];
-            },
-            set: function set(value) {
-              bootstrap(this, key, value);
-            }
-          };
-        };
-
-        for (var _k = keys$1(props), _i = 0; _i < _k.length; _i++) {
-          _loop(_k, _i);
-        }
-      } else {
-        proto.props = {
-          get: function get() {
-            var props = {};
-
-            for (var attributes = this.attributes, _length2 = attributes.length, _i2 = 0; _i2 < _length2; _i2++) {
-              var _attributes$_i = attributes[_i2],
-                  name = _attributes$_i.name,
-                  value = _attributes$_i.value;
-              props[name] = value;
-            }
-
-            return props;
-          }
-        };
-      }
-    }
-
     if (observedAttributes) statics.observedAttributes = {
       value: observedAttributes
     };
@@ -1968,7 +1931,7 @@
     proto.connectedCallback = {
       value: function value() {
         bootstrap(this);
-        if (connected) connected.apply(this, arguments);
+        if (connected) connected.call(this);
       }
     };
     if (disconnected) proto.disconnectedCallback = {
