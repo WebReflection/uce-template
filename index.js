@@ -1918,7 +1918,8 @@
       value: function value(event) {
         this[retype[event.type]](event);
       }
-    };
+    }; // [props]
+    // this is useless code in uce-template
 
     if (props !== null) {
       if (props) {
@@ -1954,7 +1955,8 @@
           }
         };
       }
-    }
+    } // [/props]
+
 
     if (observedAttributes) statics.observedAttributes = {
       value: observedAttributes
@@ -1968,7 +1970,7 @@
     proto.connectedCallback = {
       value: function value() {
         bootstrap(this);
-        if (connected) connected.apply(this, arguments);
+        if (connected) connected.call(this);
       }
     };
     if (disconnected) proto.disconnectedCallback = {
@@ -2383,8 +2385,16 @@
   var queryHelper = function queryHelper(attr, arr) {
     return function (element) {
       return [].reduce.call(element.querySelectorAll('[' + attr + ']'), function (slot, node) {
-        var name = get(node, attr);
-        slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+        var parentNode = node.parentNode;
+
+        do {
+          if (parentNode === element) {
+            var name = get(node, attr);
+            slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+            break;
+          } else if (/-/.test(parentNode.tagName) || get(parentNode, 'is')) break;
+        } while (parentNode = parentNode.parentNode);
+
         return slot;
       }, {});
     };

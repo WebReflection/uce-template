@@ -15,7 +15,7 @@ const {
   useLayoutEffect
 } = require('augmentor');
 
-const {define, render, html, svg, css} = require('uce');
+const {define, render, html, svg, css} = require('./uce.js');
 
 const stateHandler = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('reactive-props'));
 const domHandler = stateHandler({dom: true, useState});
@@ -81,15 +81,25 @@ const lazySetup = (fn, self, props, exports) => {
   return out;
 };
 
-const queryHelper = (attr, arr) => element => [].reduce.call(
-  element.querySelectorAll('[' + attr + ']'),
-  (slot, node) => {
-    const name = get(node, attr);
-    slot[name] = arr ? [].concat(slot[name] || [], node) : node;
-    return slot;
-  },
-  {}
-);
+const queryHelper = (attr, arr) => element => {
+  return [].reduce.call(
+    element.querySelectorAll('[' + attr + ']'),
+    (slot, node) => {
+      let {parentNode} = node;
+      do {
+        if (parentNode === element) {
+          const name = get(node, attr);
+          slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+          break;
+        }
+        else if (/-/.test(parentNode.tagName) || get(parentNode, 'is'))
+          break;
+      } while (parentNode = parentNode.parentNode);
+      return slot;
+    },
+    {}
+  );
+};
 
 // preloaded imports
 const virtualNameSpace = {

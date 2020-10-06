@@ -1,11 +1,12 @@
 {
   "name": "uce-template",
-  "version": "0.2.6",
+  "version": "0.2.11",
   "description": "A tiny toolless library with tools included",
   "bin": "./bin/index.js",
   "main": "./cjs/index.js",
   "scripts": {
-    "build": "npm run graph && npm run cjs && npm run rollup:es && npm run rollup:babel && npm run min && npm run integrity && npm run size",
+    "uce": "node -e 'require(`fs`).writeFileSync(`esm/uce.js`,require(`fs`).readFileSync(`node_modules/uce/esm/index.js`).toString().replace(/NOPE\\/\\/ \\[props\\][\\S\\s]+?\\/\\/ \\[\\/props\\]/, ``))'",
+    "build": "npm run uce && npm run graph && npm run cjs && npm run rollup:es && npm run rollup:babel && npm run min && npm run integrity && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "graph": "cp node_modules/reactive-props/state.js test/js/reactive-props.js",
     "integrity": "cat min.js | openssl dgst -sha256 -binary | openssl base64 -A > nonce.txt && node -e 'const {readFileSync,writeFileSync}=require(`fs`),nonce=readFileSync(`nonce.txt`);writeFileSync(`README.md`,readFileSync(`README.md`).toString().replace(/(integrity)=\"[^\"]*?\"/g,`$1=\"sha256-${nonce}\"`).replace(/(__nonce__ )`[^`]*?`/g,\"$1`\"+nonce+\"`\"))'",
@@ -29,7 +30,8 @@
     "ascjs": "^4.0.1",
     "rollup": "^2.28.2",
     "rollup-plugin-includepaths": "^0.2.4",
-    "rollup-plugin-terser": "^7.0.2"
+    "rollup-plugin-terser": "^7.0.2",
+    "uce": "^1.11.8"
   },
   "module": "./esm/index.js",
   "type": "module",
@@ -51,9 +53,8 @@
     "csso": "^4.0.3",
     "html-minifier-terser": "^5.1.1",
     "qsa-observer": "^1.1.6",
-    "reactive-props": "^0.2.0",
+    "reactive-props": "^0.2.1",
     "terser": "^5.3.4",
-    "uce": "^1.11.6",
     "uce-require": "^0.1.9"
   }
 }
