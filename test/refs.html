@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uce-template slots</title>
+  <script defer src=../index.js></script>
+</head>
+<body>
+  <element-details>
+    <span ref="name"></span>
+    <span ref="description"></span>
+  </element-details>
+
+  <template is="uce-template">
+    <element-details></element-details>
+    <script type="module" setup>
+      import {ref} from '@uce';
+      const {name, description} = ref(this);
+      name.textContent = 'I am name';
+      description.textContent = 'I am description';
+    </script>
+  </template>
+</body>
+</html>

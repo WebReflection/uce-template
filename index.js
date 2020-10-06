@@ -2315,8 +2315,8 @@
     template.push(html.slice(p));
     var args = [template];
     var rest = Function('return function(){with(arguments[0])return[' + values + ']}')();
-    return function (self, object) {
-      return args.concat(rest.call(self, object));
+    return function (object) {
+      return args.concat(rest.call(this, object));
     };
   });
 
@@ -2378,6 +2378,16 @@
     var out = result["default"] || result;
     if (props) domHandler(self, out.props);
     return out;
+  };
+
+  var queryHelper = function queryHelper(attr, arr) {
+    return function (element) {
+      return [].reduce.call(element.querySelectorAll('[' + attr + ']'), function (slot, node) {
+        var name = get(node, attr);
+        slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+        return slot;
+      }, {});
+    };
   }; // preloaded imports
 
 
@@ -2390,13 +2400,8 @@
     reactive: stateHandler({
       useState: useState
     }),
-    slot: function slot(element) {
-      return [].reduce.call(element.querySelectorAll('[slot]'), function (slot, node) {
-        var name = get(node, 'slot');
-        slot[name] = [].concat(slot[name] || [], node);
-        return slot;
-      }, {});
-    }
+    ref: queryHelper('ref', false),
+    slot: queryHelper('slot', true)
   }; // deprecated? namespace
 
   resolve('@uce/reactive', virtualNameSpace.reactive);
@@ -2436,7 +2441,8 @@
       var observedAttributes = component.observedAttributes,
           props = component.props,
           setup = component.setup;
-      var apply = isSetup || !!(setup || template);
+      var hasTemplate = !!template.trim();
+      var apply = isSetup || hasTemplate || !!setup;
       var definition = {
         props: null,
         "extends": as ? name : 'element',
@@ -2452,11 +2458,15 @@
               if (apply) {
                 self.render = render;
                 if (props) domHandler(self, props);
-                var values = isSetup ? lazySetup(component, self, isProps, {}) : setup && component.setup(self) || component;
+                var values = isSetup ? lazySetup(component, self, isProps, {}) : setup && component.setup(self);
 
-                update = function update() {
-                  html.apply(self, params(self, values));
-                };
+                if (hasTemplate) {
+                  var args = params.bind(self, values || {});
+
+                  update = function update() {
+                    html.apply(self, args());
+                  };
+                }
               }
             }
 
