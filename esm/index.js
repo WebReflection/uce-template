@@ -84,7 +84,7 @@ const queryHelper = (attr, arr) => element => {
           slot[name] = arr ? [].concat(slot[name] || [], node) : node;
           break;
         }
-        else if (/-/.test(get(parentNode, 'is') || parentNode.tagName))
+        else if (/-/.test(parentNode.tagName) || get(parentNode, 'is'))
           break;
       } while (parentNode = parentNode.parentNode);
       return slot;
