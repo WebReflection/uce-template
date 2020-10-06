@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uce-template nested elements</title>
+  <script src="../index.js"></script>
+</head>
+<body>
+  <template is="uce-template">
+    <div is="my-element">
+      {{slot.header}}
+      {{slot.content}}
+    </div>
+    <script type="module">
+      import {slot as slots} from '@uce';
+      export default {
+        setup(element) {
+          var slot = slots(element);
+          console.log(slot);
+          return {slot: slot};
+        }
+      };
+    </script>
+  </template>
+  <div is="my-element">
+    <h3 slot="header">Outer</h3>
+    <div slot="content">
+      <div is="my-element">
+        <h3 slot="header">Inner</h3>
+        <div slot="content">
+          Content
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

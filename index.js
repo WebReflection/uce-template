@@ -2383,8 +2383,16 @@
   var queryHelper = function queryHelper(attr, arr) {
     return function (element) {
       return [].reduce.call(element.querySelectorAll('[' + attr + ']'), function (slot, node) {
-        var name = get(node, attr);
-        slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+        var parentNode = node.parentNode;
+
+        do {
+          if (parentNode === element) {
+            var name = get(node, attr);
+            slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+            break;
+          } else if (/-/.test(get(parentNode, 'is') || parentNode.tagName)) break;
+        } while (parentNode = parentNode.parentNode);
+
         return slot;
       }, {});
     };

@@ -73,15 +73,25 @@ const lazySetup = (fn, self, props, exports) => {
   return out;
 };
 
-const queryHelper = (attr, arr) => element => [].reduce.call(
-  element.querySelectorAll('[' + attr + ']'),
-  (slot, node) => {
-    const name = get(node, attr);
-    slot[name] = arr ? [].concat(slot[name] || [], node) : node;
-    return slot;
-  },
-  {}
-);
+const queryHelper = (attr, arr) => element => {
+  return [].reduce.call(
+    element.querySelectorAll('[' + attr + ']'),
+    (slot, node) => {
+      let {parentNode} = node;
+      do {
+        if (parentNode === element) {
+          const name = get(node, attr);
+          slot[name] = arr ? [].concat(slot[name] || [], node) : node;
+          break;
+        }
+        else if (/-/.test(get(parentNode, 'is') || parentNode.tagName))
+          break;
+      } while (parentNode = parentNode.parentNode);
+      return slot;
+    },
+    {}
+  );
+};
 
 // preloaded imports
 const virtualNameSpace = {
