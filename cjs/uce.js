@@ -92,7 +92,35 @@ const define = (tagName, definition) => {
       this[retype[event.type]](event);
     }};
 
-  
+  // [props]
+  // this is useless code in uce-template
+  if (props !== null) {
+    if (props) {
+      for (let k = keys(props), i = 0; i < k.length; i++) {
+        const key = k[i];
+        proto[key] = {
+          get() {
+            bootstrap(this);
+            return props[key];
+          },
+          set(value) {
+            bootstrap(this, key, value);
+          }
+        };
+      }
+    }
+    else {
+      proto.props = {get() {
+        const props = {};
+        for (let {attributes} = this, {length} = attributes, i = 0; i < length; i++) {
+          const {name, value} = attributes[i];
+          props[name] = value;
+        }
+        return props;
+      }};
+    }
+  }
+  // [/props]
 
   if (observedAttributes)
     statics.observedAttributes = {value: observedAttributes};

@@ -5,7 +5,7 @@
   "bin": "./bin/index.js",
   "main": "./cjs/index.js",
   "scripts": {
-    "uce": "node -e 'require(`fs`).writeFileSync(`esm/uce.js`,require(`fs`).readFileSync(`node_modules/uce/esm/index.js`).toString().replace(/\\/\\/ \\[props\\][\\S\\s]+?\\/\\/ \\[\\/props\\]/, ``))'",
+    "uce": "node -e 'require(`fs`).writeFileSync(`esm/uce.js`,require(`fs`).readFileSync(`node_modules/uce/esm/index.js`).toString().replace(/NOPE\\/\\/ \\[props\\][\\S\\s]+?\\/\\/ \\[\\/props\\]/, ``))'",
     "build": "npm run uce && npm run graph && npm run cjs && npm run rollup:es && npm run rollup:babel && npm run min && npm run integrity && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "graph": "cp node_modules/reactive-props/state.js test/js/reactive-props.js",
