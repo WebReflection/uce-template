@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="../index.js"></script>
+</head>
+<body>
+  <to-do-item></to-do-item>
+  <template is="uce-template">
+    <to-do-item>
+      <p class=text>{{ item.value }}</p>
+      <button class=delete onclick="{{ deleteItem }}">-</button>
+    </to-do-item>
+    <script type="module" setup>
+    export default {
+      item: {value: 'test'},
+      deleteItem({currentTarget}) {
+        currentTarget.closest('to-do-item').remove();
+      }
+    };
+    </script>
+  </template>
+</body>
+</html>
