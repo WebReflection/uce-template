@@ -160,6 +160,25 @@ Regarding **ShadowDOM**, its polyfill is not included in this project but it's p
 
 The `shadow` attribute is `open` by default, but it can also be specified as `shadow=closed`.
 
+Regarding `{{JS}}`, if attribute, and you'd like to use `{{ JS }}` spaces around, the attribute *must* be in quotes, otherwise the *HTML* template breaks the layout in unexpected ways.
+
+```html
+<!-- OK -->
+<my-counter>
+  <button onClick={{dec}}> - </button>
+</my-counter>
+
+<!-- OK -->
+<my-counter>
+  <button onClick="{{ dec }}"> - </button>
+</my-counter>
+
+<!-- IT BREAKS!!! -->
+<my-counter>
+  <button onClick={{ dec }}> - </button>
+</my-counter>
+```
+
 ### The curious `<!--{{interpolation}}-->` case
 
 As everything in here is mostly based on standard *HTML* behavior, there are cases where an interpolation should be wrapped as comment.
