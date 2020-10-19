@@ -324,7 +324,7 @@ If we define components as `view/my-component.uce` we might as well decide to in
 This approach simplifies a lot bundles, dependencies, unnecessary bloat, and it can be done by including just `uce-template` and the tiny <sup><sub>(364 bytes)</sub></sup> [uce-loader](https://github.com/WebReflection/uce-loader#readme) as bootstrap, eventually defining extra dependencies used across components.
 
 ```js
-import {parse, resolve} from 'uce-loader';
+import {parse, resolve} from 'uce-template';
 import loader from 'uce-loader';
 
 // optional components dependencies
