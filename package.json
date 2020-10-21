@@ -1,8 +1,10 @@
 {
   "name": "uce-template",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "A tiny toolless library with tools included",
-  "bin": "./bin/index.js",
+  "bin": {
+    "uce-template": "bin/index.js"
+  },
   "main": "./cjs/index.js",
   "scripts": {
     "uce": "node -e 'require(`fs`).writeFileSync(`esm/uce.js`,require(`fs`).readFileSync(`node_modules/uce/esm/index.js`).toString().replace(/NOPE\\/\\/ \\[props\\][\\S\\s]+?\\/\\/ \\[\\/props\\]/, ``))'",
@@ -56,5 +58,13 @@
     "reactive-props": "^0.2.1",
     "terser": "^5.3.4",
     "uce-require": "^0.1.9"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WebReflection/uce-template.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WebReflection/uce-template/issues"
+  },
+  "homepage": "https://github.com/WebReflection/uce-template#readme"
 }
