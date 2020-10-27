@@ -9,7 +9,7 @@ import {
   useEffect, useLayoutEffect
 } from 'augmentor';
 
-import {define, render, html, svg, css} from './uce.js';
+import {define, render, html, svg, css} from 'uce';
 
 import stateHandler from 'reactive-props';
 const domHandler = stateHandler({dom: true, useState});

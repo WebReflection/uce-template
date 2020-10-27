@@ -15,7 +15,7 @@ const {
   useLayoutEffect
 } = require('augmentor');
 
-const {define, render, html, svg, css} = require('./uce.js');
+const {define, render, html, svg, css} = require('uce');
 
 const stateHandler = (m => m.__esModule ? /* istanbul ignore next */ m.default : /* istanbul ignore next */ m)(require('reactive-props'));
 const domHandler = stateHandler({dom: true, useState});
