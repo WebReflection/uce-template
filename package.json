@@ -48,7 +48,7 @@
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
     "@ungap/create-content": "^0.2.0",
-    "@ungap/custom-elements": "^0.1.7",
+    "@ungap/custom-elements": "^0.1.8",
     "@webreflection/lie": "^0.1.1",
     "augmentor": "^2.2.0",
     "csso": "^4.0.3",
