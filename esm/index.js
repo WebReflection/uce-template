@@ -2,12 +2,13 @@ import '@ungap/custom-elements';
 import Lie from '@webreflection/lie';
 
 import {
-  augmentor,
+  hooked,
   useState, useRef,
   useContext, createContext,
   useCallback, useMemo, useReducer,
-  useEffect, useLayoutEffect
-} from 'augmentor';
+  useEffect, useLayoutEffect,
+  hasEffect, dropEffect
+} from 'uhooks';
 
 import {define, render, html, svg, css} from 'uce';
 
@@ -110,13 +111,16 @@ resolve('@uce', virtualNameSpace);
 resolve('uce', virtualNameSpace);
 
 // extra/useful modules
-resolve('augmentor', {
-  augmentor,
+const hooks = {
+  augmentor: hooked,
+  hooked,
   useState, useRef,
   useContext, createContext,
   useCallback, useMemo, useReducer,
   useEffect, useLayoutEffect
-});
+};
+resolve('augmentor', hooks);
+resolve('uhooks', hooks);
 resolve('qsa-observer', QSAO);
 resolve('reactive-props', stateHandler);
 resolve('@webreflection/lie', Lie);
@@ -139,6 +143,7 @@ function init(tried) {
     const {observedAttributes, props, setup} = component;
     const hasTemplate = !!template.trim();
     const apply = isSetup || hasTemplate || !!setup;
+    const hooks = new WeakMap;
     const definition = {
       props: null,
       extends: as ? name : 'element',
@@ -147,7 +152,7 @@ function init(tried) {
         const {html} = self;
         let init = true;
         let update = noop;
-        const render = augmentor(() => {
+        const render = hooked(() => {
           if (init) {
             init = !init;
             if (apply) {
@@ -168,6 +173,8 @@ function init(tried) {
           update();
         });
         render();
+        if (hasEffect(render))
+          hooks.set(self, render);
       }
     };
     if (css)
@@ -190,6 +197,8 @@ function init(tried) {
       };
       const d = definition.disconnected = function () {
         const {disconnected} = this;
+        if (hooks.has(this))
+          dropEffect(hooks.get(this));
         if (disconnected !== d)
           disconnected.call(this);
       };

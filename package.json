@@ -8,7 +8,7 @@
   "main": "./cjs/index.js",
   "scripts": {
     "uce": "node -e 'require(`fs`).writeFileSync(`esm/uce.js`,require(`fs`).readFileSync(`node_modules/uce/esm/index.js`).toString().replace(/NOPE\\/\\/ \\[props\\][\\S\\s]+?\\/\\/ \\[\\/props\\]/, ``))'",
-    "build": "npm run graph && npm run cjs && npm run rollup:es && npm run rollup:babel && npm run min && npm run integrity && npm run size",
+    "build": "npm run graph && npm run cjs && npm run rollup:es && npm run rollup:babel && drop-babel-typeof index.js && npm run min && npm run integrity && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "graph": "cp node_modules/reactive-props/state.js test/js/reactive-props.js",
     "integrity": "cat min.js | openssl dgst -sha256 -binary | openssl base64 -A > nonce.txt && node -e 'const {readFileSync,writeFileSync}=require(`fs`),nonce=readFileSync(`nonce.txt`);writeFileSync(`README.md`,readFileSync(`README.md`).toString().replace(/(integrity)=\"[^\"]*?\"/g,`$1=\"sha256-${nonce}\"`).replace(/(__nonce__ )`[^`]*?`/g,\"$1`\"+nonce+\"`\"))'",
@@ -26,11 +26,12 @@
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "devDependencies": {
-    "@rollup/plugin-babel": "^5.2.1",
-    "@rollup/plugin-node-resolve": "^10.0.0",
+    "@rollup/plugin-babel": "^5.2.2",
+    "@rollup/plugin-node-resolve": "^11.0.1",
     "@ungap/degap": "^0.2.1",
-    "ascjs": "^4.0.1",
-    "rollup": "^2.32.1",
+    "ascjs": "^4.0.3",
+    "drop-babel-typeof": "^1.0.3",
+    "rollup": "^2.35.1",
     "rollup-plugin-includepaths": "^0.2.4",
     "rollup-plugin-terser": "^7.0.2"
   },
@@ -45,19 +46,19 @@
   },
   "unpkg": "min.js",
   "dependencies": {
-    "@babel/core": "^7.12.3",
-    "@babel/preset-env": "^7.12.1",
+    "@babel/core": "^7.12.10",
+    "@babel/preset-env": "^7.12.11",
     "@ungap/create-content": "^0.2.0",
-    "@ungap/custom-elements": "^0.1.8",
+    "@ungap/custom-elements": "^0.1.10",
     "@webreflection/lie": "^0.1.1",
-    "augmentor": "^2.2.0",
-    "csso": "^4.0.3",
+    "csso": "^4.2.0",
     "html-minifier-terser": "^5.1.1",
     "qsa-observer": "^1.1.6",
     "reactive-props": "^0.2.1",
-    "terser": "^5.3.8",
-    "uce": "^1.11.9",
-    "uce-require": "^0.1.9"
+    "terser": "^5.5.1",
+    "uce": "^1.11.10",
+    "uce-require": "^0.1.9",
+    "uhooks": "^0.1.19"
   },
   "repository": {
     "type": "git",

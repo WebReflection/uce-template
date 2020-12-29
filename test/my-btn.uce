@@ -3,7 +3,16 @@
 </button>
 
 <script type="module">
+  import {useEffect} from 'uhooks';
   export default {
+    setup() {
+      useEffect(() => {
+        console.log('connected');
+        return () => {
+          console.log('disconnected');
+        };
+      });
+    },
     props: {times: 0},
     onClick() {
       this.times++;
