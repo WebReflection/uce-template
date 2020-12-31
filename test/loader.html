@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script type="module">
+    import loader from 'https://unpkg.com/uce-loader?module';
+    loader({
+      on(component) {
+        // first component found, load uce-template
+        if (!this.q) {
+          this.q = [component];
+          const script = document.createElement('script');
+          script.src = '../index.js';
+          document.body.appendChild(script).onload = () => {
+            // get the uce-template class to use its .from(...)
+            this.Template = customElements.get('uce-template');
+            // load all queued components
+            for (var q = this.q.splice(0), i = 0; i < q.length; i++)
+              this.on(q[i]);
+          };
+        }
+        // when uce-template is loaded
+        else if (this.Template) {
+          // ignore loading uce-template itself
+          if (component !== 'uce-template') {
+            // load the component on demand
+            fetch(`./${component}.uce`)
+              .then(body => body.text())
+              .then(definition => {
+                document.body.appendChild(
+                  this.Template.from(definition)
+                );
+              });
+          }
+        }
+        // if uce-template is not loaded yet
+        // add the component to the queue
+        else
+          this.q.push(component);
+      }
+    });
+  </script>
+</head>
+<body>
+  <button is="my-btn"></button>
+</body>
+</html>
