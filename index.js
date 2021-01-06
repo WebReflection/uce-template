@@ -548,9 +548,8 @@
     }
   };
 
-  var h = null,
+  var info = null,
       schedule = new Set();
-  var hooks = new WeakMap();
 
   var invoke = function invoke(effect) {
     var $ = effect.$,
@@ -596,7 +595,7 @@
     });
   };
   var getInfo = function getInfo() {
-    return hooks.get(h);
+    return info;
   };
   var hasEffect = function hasEffect(hook) {
     return fx.has(hook);
@@ -605,7 +604,7 @@
     return typeof f === 'function';
   };
   var hooked = function hooked(callback) {
-    var info = {
+    var current = {
       h: hook,
       c: null,
       a: null,
@@ -613,18 +612,17 @@
       i: 0,
       s: []
     };
-    hooks.set(hook, info);
     return hook;
 
     function hook() {
-      var p = h;
-      h = hook;
-      info.e = info.i = 0;
+      var prev = info;
+      info = current;
+      current.e = current.i = 0;
 
       try {
-        return callback.apply(info.c = this, info.a = arguments);
+        return callback.apply(current.c = this, current.a = arguments);
       } finally {
-        h = p;
+        info = prev;
         if (effects.length) wait.then(effects.forEach.bind(effects.splice(0), invoke));
         if (layoutEffects.length) layoutEffects.splice(0).forEach(invoke);
       }
@@ -1777,7 +1775,7 @@
     return document.createElement(name);
   };
 
-  var info = function info(e) {
+  var info$1 = function info(e) {
     return constructors.get(e) || constructors.set(e, {
       c: el(e).constructor,
       e: e
@@ -1923,7 +1921,7 @@
       value: disconnected
     };
 
-    var _info = info(definition["extends"] || element),
+    var _info = info$1(definition["extends"] || element),
         c = _info.c,
         e = _info.e;
 
@@ -1999,7 +1997,7 @@
       }]);
 
       return _class;
-    }(info(element).c));
+    }(info$1(element).c));
 
   function bind(method) {
     this[method] = this[method].bind(this);
@@ -2366,7 +2364,7 @@
   resolve('@uce', virtualNameSpace);
   resolve('uce', virtualNameSpace); // extra/useful modules
 
-  var hooks$1 = {
+  var hooks = {
     augmentor: hooked,
     hooked: hooked,
     useState: useState,
@@ -2379,8 +2377,8 @@
     useEffect: useEffect,
     useLayoutEffect: useLayoutEffect
   };
-  resolve('augmentor', hooks$1);
-  resolve('uhooks', hooks$1);
+  resolve('augmentor', hooks);
+  resolve('uhooks', hooks);
   resolve('qsa-observer', QSAO);
   resolve('reactive-props', stateHandler);
   resolve('@webreflection/lie', Lie); // <template is="uce-template" />
