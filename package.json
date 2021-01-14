@@ -28,7 +28,7 @@
   "devDependencies": {
     "@rollup/plugin-babel": "^5.2.2",
     "@rollup/plugin-node-resolve": "^11.0.1",
-    "@ungap/degap": "^0.2.2",
+    "@ungap/degap": "^0.2.3",
     "ascjs": "^4.0.3",
     "drop-babel-typeof": "^1.0.3",
     "rollup": "^2.36.1",
@@ -48,7 +48,7 @@
   "dependencies": {
     "@babel/core": "^7.12.10",
     "@babel/preset-env": "^7.12.11",
-    "@ungap/create-content": "^0.3.0",
+    "@ungap/create-content": "^0.3.1",
     "@ungap/custom-elements": "^0.1.10",
     "@webreflection/lie": "^0.1.1",
     "csso": "^4.2.0",
@@ -56,7 +56,7 @@
     "qsa-observer": "^1.1.6",
     "reactive-props": "^0.2.1",
     "terser": "^5.5.1",
-    "uce": "^1.12.0",
+    "uce": "^1.12.1",
     "uce-require": "^0.1.9",
     "uhooks": "^0.2.3"
   },
