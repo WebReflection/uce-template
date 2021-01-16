@@ -10,6 +10,12 @@ A tiny toolless library with tools included. **[Live demo](https://webreflection
 
 - - -
 
+### 📣 Community Announcement
+
+Please ask questions in the [dedicated discussions repository](https://github.com/WebReflection/discussions), to help the community around this project grow ♥
+
+---
+
 Inspired by [Vue 3 "_One Piece_"](https://github.com/vuejs/vue-next/releases/tag/v3.0.0), _uce-template_ provides a custom builtin `<template>` element to define components in a _Vue_ fashion.
 
 ```html
