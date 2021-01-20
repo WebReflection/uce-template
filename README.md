@@ -10,6 +10,12 @@ A tiny toolless library with tools included. **[Live demo](https://webreflection
 
 - - -
 
+### 📣 Community Announcement
+
+Please ask questions in the [dedicated discussions repository](https://github.com/WebReflection/discussions), to help the community around this project grow ♥
+
+---
+
 Inspired by [Vue 3 "_One Piece_"](https://github.com/vuejs/vue-next/releases/tag/v3.0.0), _uce-template_ provides a custom builtin `<template>` element to define components in a _Vue_ fashion.
 
 ```html
@@ -482,12 +488,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `7VNubyKo1/DuZCmDJNnwP2xVK7AOOyTQO39+czHCLc0=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `3j1+Tok/Y8fO7J4d5CmekilK4Fr+cuqqAkH6+pp91HE=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-7VNubyKo1/DuZCmDJNnwP2xVK7AOOyTQO39+czHCLc0="
+        integrity="sha256-3j1+Tok/Y8fO7J4d5CmekilK4Fr+cuqqAkH6+pp91HE="
         crossorigin="anonymous">
 </script>
 ```

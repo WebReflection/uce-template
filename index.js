@@ -1257,8 +1257,8 @@
   // later on, so that paths are retrieved from one already parsed,
   // hence without missing child nodes once re-cloned.
 
-  var createFragment = isImportNodeLengthWrong ? function (text, type) {
-    return importNode.call(document, createContent(text, type), true);
+  var createFragment = isImportNodeLengthWrong ? function (text, type, normalize) {
+    return importNode.call(document, createContent(text, type, normalize), true);
   } : createContent; // IE11 and old Edge have a different createTreeWalker signature that
   // has been deprecated in other browsers. This export is needed only
   // to guarantee the TreeWalker doesn't show warnings and, ultimately, works
@@ -1395,7 +1395,9 @@
   // content, within the exact same amount of updates each time.
   // This cache relates each template to its unique content and updates.
 
-  var cache = umap(new WeakMap());
+  var cache = umap(new WeakMap()); // a RegExp that helps checking nodes that cannot contain comments
+
+  var textOnly = /^(?:plaintext|script|style|textarea|title|xmp)$/i;
   var createCache = function createCache() {
     return {
       stack: [],
@@ -1478,11 +1480,11 @@
           });
           node.removeAttribute(search);
           search = "".concat(prefix).concat(++i);
-        } // if the node was a style or a textarea one, check its content
+        } // if the node was a style, textarea, or others, check its content
         // and if it is <!--isµX--> then update tex-only this node
 
 
-        if (/^(?:style|textarea)$/i.test(node.tagName) && node.textContent.trim() === "<!--".concat(search, "-->")) {
+        if (textOnly.test(node.tagName) && node.textContent.trim() === "<!--".concat(search, "-->")) {
           node.textContent = '';
           nodes.push({
             type: 'text',
