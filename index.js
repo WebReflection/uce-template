@@ -184,6 +184,7 @@
         Reflect = _self$1.Reflect;
     var Promise$1 = self.Promise || Lie;
     var defineProperty = Object.defineProperty,
+        keys = Object.keys,
         getOwnPropertyNames = Object.getOwnPropertyNames,
         setPrototypeOf = Object.setPrototypeOf;
     var legacy = !self.customElements;
@@ -367,12 +368,22 @@
         var proto = _prototypes.get(selector);
 
         if (connected && !proto.isPrototypeOf(element)) {
+          var k = keys(element);
+          var v = k.map(function (key) {
+            var value = element[key];
+            delete element[key];
+            return value;
+          });
           _override = setPrototypeOf(element, proto);
 
           try {
             new proto.constructor();
           } finally {
             _override = null;
+
+            for (var i = 0, length = k.length; i < length; i++) {
+              element[k[i]] = v[i];
+            }
           }
         }
 
@@ -447,6 +458,7 @@
         });
       });
       defineProperty(document$1, 'createElement', {
+        configurable: true,
         value: function value(name, options) {
           var is = options && options.is;
 
@@ -463,6 +475,7 @@
         }
       });
       if (attachShadow) defineProperty(Element.prototype, 'attachShadow', {
+        configurable: true,
         value: function value() {
           var root = attachShadow.apply(this, arguments);
 
