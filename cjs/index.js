@@ -1,6 +1,6 @@
 'use strict';
 require('@ungap/custom-elements');
-const Lie = (m => m.__esModule ? /* c8 ignore next */ m.default : /* c8 ignore next */ m)(require('@webreflection/lie'));
+const Lie = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('@webreflection/lie'));
 
 const {
   hooked,
@@ -19,10 +19,10 @@ const {
 
 const {define, render, html, svg, css} = require('uce');
 
-const stateHandler = (m => m.__esModule ? /* c8 ignore next */ m.default : /* c8 ignore next */ m)(require('reactive-props'));
+const stateHandler = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('reactive-props'));
 const domHandler = stateHandler({dom: true, useState});
 
-const QSAO = (m => m.__esModule ? /* c8 ignore next */ m.default : /* c8 ignore next */ m)(require('qsa-observer'));
+const QSAO = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('qsa-observer'));
 const query = [];
 const {drop, parse: parseQSAO} = QSAO({
   query,
@@ -40,9 +40,9 @@ const {drop, parse: parseQSAO} = QSAO({
 const {asCJS, cache, loader, waiting} = require('uce-require');
 
 // Note: rollup breaks es.js if this is imported on top
-const createContent = (m => m.__esModule ? /* c8 ignore next */ m.default : /* c8 ignore next */ m)(require('@ungap/create-content'));
+const createContent = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('@ungap/create-content'));
 
-const partial = (m => m.__esModule ? /* c8 ignore next */ m.default : /* c8 ignore next */ m)(require('./partial.js'));
+const partial = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('./partial.js'));
 
 const resolve = (name, module) => {
   if (name in cache && cache[name] !== waiting)
