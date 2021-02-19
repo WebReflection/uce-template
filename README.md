@@ -1,6 +1,6 @@
 # <em>µ</em>ce-template
 
-[![Downloads](https://img.shields.io/npm/dm/uce-template.svg)](https://www.npmjs.com/package/uce-template)
+[![Downloads](https://img.shields.io/npm/dm/uce-template.svg)](https://www.npmjs.com/package/uce-template) [![CSP friendly](https://webreflection.github.io/csp/friendly.svg)](https://webreflection.github.io/csp/#-csp-friendly)
 
 ![winter sky](./test/uce-template-head.jpg)
 
