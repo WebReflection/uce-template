@@ -1,6 +1,6 @@
 # <em>µ</em>ce-template
 
-[![Downloads](https://img.shields.io/npm/dm/uce-template.svg)](https://www.npmjs.com/package/uce-template)
+[![Downloads](https://img.shields.io/npm/dm/uce-template.svg)](https://www.npmjs.com/package/uce-template) [![CSP friendly](https://webreflection.github.io/csp/friendly.svg)](https://webreflection.github.io/csp/#-csp-friendly)
 
 ![winter sky](./test/uce-template-head.jpg)
 
@@ -488,12 +488,12 @@ The advantage of this technique is that the `known` *Set* could be dynamically g
 
 `uce-template` inevitably needs to use `Function` to evaluate either [template partials](https://github.com/WebReflection/tag-params#caveats) or in-script *require(...)*.
 
-It is recommended to increase security using either the __nonce__ `A6ypBL85lXi6JJ6t4NvC5q9HuaVbKmLkRN7NCpUvHSg=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
+It is recommended to increase security using either the __nonce__ `Gz6wSN1M6ofkVSHRYXAiqEUFuoUS3wiXJ9nW9owYi+g=` or the *integrity* attribute, trusting via [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) only scripts that comes from our own domain.
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval'">
 <script defer src="/js/uce-template.js"
-        integrity="sha256-A6ypBL85lXi6JJ6t4NvC5q9HuaVbKmLkRN7NCpUvHSg="
+        integrity="sha256-Gz6wSN1M6ofkVSHRYXAiqEUFuoUS3wiXJ9nW9owYi+g="
         crossorigin="anonymous">
 </script>
 ```

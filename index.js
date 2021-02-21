@@ -189,6 +189,23 @@
         setPrototypeOf = Object.setPrototypeOf;
     var legacy = !self.customElements;
 
+    var expando = function expando(element) {
+      var key = keys(element);
+      var value = [];
+      var length = key.length;
+
+      for (var i = 0; i < length; i++) {
+        value[i] = element[key[i]];
+        delete element[key[i]];
+      }
+
+      return function () {
+        for (var _i = 0; _i < length; _i++) {
+          element[key[_i]] = value[_i];
+        }
+      };
+    };
+
     if (legacy) {
       var HTMLBuiltIn = function HTMLBuiltIn() {
         var constructor = this.constructor;
@@ -210,12 +227,14 @@
         var proto = prototypes.get(selector);
 
         if (connected && !proto.isPrototypeOf(element)) {
+          var redefine = expando(element);
           override = setPrototypeOf(element, proto);
 
           try {
             new proto.constructor();
           } finally {
             override = null;
+            redefine();
           }
         }
 
@@ -368,22 +387,14 @@
         var proto = _prototypes.get(selector);
 
         if (connected && !proto.isPrototypeOf(element)) {
-          var k = keys(element);
-          var v = k.map(function (key) {
-            var value = element[key];
-            delete element[key];
-            return value;
-          });
+          var redefine = expando(element);
           _override = setPrototypeOf(element, proto);
 
           try {
             new proto.constructor();
           } finally {
             _override = null;
-
-            for (var i = 0, length = k.length; i < length; i++) {
-              element[k[i]] = v[i];
-            }
+            redefine();
           }
         }
 
@@ -402,7 +413,7 @@
         handle: function handle(element, connected) {
           if (shadowRoots.has(element)) {
             if (connected) shadows.add(element);else shadows["delete"](element);
-            parseShadow.call(_query, element);
+            if (_query.length) parseShadow.call(_query, element);
           }
         }
       }),
@@ -884,13 +895,13 @@
 
   var attr = /([^\s\\>"'=]+)\s*=\s*(['"]?)$/;
   var empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
-  var node = /<[a-z][^>]+$/i;
+  var node$1 = /<[a-z][^>]+$/i;
   var notNode = />[^<>]*$/;
   var selfClosing = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/>)/ig;
   var trimEnd = /\s+$/;
 
   var isNode = function isNode(template, i) {
-    return 0 < i-- && (node.test(template[i]) || !notNode.test(template[i]) && isNode(template, i));
+    return 0 < i-- && (node$1.test(template[i]) || !notNode.test(template[i]) && isNode(template, i));
   };
 
   var regular = function regular(original, name, extra) {
@@ -1143,6 +1154,16 @@
       }
     };
   };
+
+  var _boolean = function _boolean(node, key, oldValue) {
+    return function (newValue) {
+      if (oldValue !== !!newValue) {
+        // when IE won't be around anymore ...
+        // node.toggleAttribute(key, oldValue = !!newValue);
+        if (oldValue = !!newValue) node.setAttribute(key, '');else node.removeAttribute(key);
+      }
+    };
+  };
   var data = function data(_ref) {
     var dataset = _ref.dataset;
     return function (values) {
@@ -1171,7 +1192,7 @@
     };
   };
   var setter = function setter(node, key) {
-    return function (value) {
+    return key === 'dataset' ? data(node) : function (value) {
       node[key] = value;
     };
   };
@@ -1318,10 +1339,14 @@
         case 'boolean':
           if (oldValue !== newValue) {
             oldValue = newValue;
-            if (text) text.textContent = newValue;else text = document.createTextNode(newValue);
+            if (text) text.nodeValue = newValue;else text = document.createTextNode(newValue);
             nodes = diff(comment, nodes, [text]);
           }
 
+          break;
+
+        case 'function':
+          anyContent(newValue(node));
           break;
         // null, and undefined are used to cleanup previous content
 
@@ -1363,6 +1388,7 @@
   }; // attributes can be:
   //  * ref=${...}      for hooks and other purposes
   //  * aria=${...}     for aria attributes
+  //  * ?boolean=${...} for boolean attributes
   //  * .dataset=${...} for dataset related attributes
   //  * .setter=${...}  for Custom Elements setters or nodes with setters
   //                    such as buttons, details, options, select, etc
@@ -1373,11 +1399,25 @@
   var handleAttribute = function handleAttribute(node, name
   /*, svg*/
   ) {
-    if (name === 'ref') return ref(node);
-    if (name === 'aria') return aria(node);
-    if (name === '.dataset') return data(node);
-    if (name.slice(0, 1) === '.') return setter(node, name.slice(1));
-    if (name.slice(0, 2) === 'on') return event(node, name);
+    switch (name[0]) {
+      case '?':
+        return _boolean(node, name.slice(1), false);
+
+      case '.':
+        return setter(node, name.slice(1));
+
+      case 'o':
+        if (name[1] === 'n') return event(node, name);
+    }
+
+    switch (name) {
+      case 'ref':
+        return ref(node);
+
+      case 'aria':
+        return aria(node);
+    }
+
     return attribute(node, name
     /*, svg*/
     );
@@ -1471,7 +1511,7 @@
       if (node.nodeType === 8) {
         // The only comments to be considered are those
         // which content is exactly the same as the searched one.
-        if (node.textContent === search) {
+        if (node.nodeValue === search) {
           nodes.push({
             type: 'node',
             path: createPath(node)
@@ -1735,6 +1775,7 @@
 
     return desc;
   };
+
   var noop = function noop() {};
 
   var dom = (function () {
@@ -1864,6 +1905,7 @@
 
       switch (key) {
         case 'attachShadow':
+        case 'constructor':
         case 'observedAttributes':
         case 'style':
           break;
@@ -2559,8 +2601,6 @@
 
   exports.parse = parse;
   exports.resolve = resolve;
-
-  Object.defineProperty(exports, '__esModule', { value: true });
 
   return exports;
 
