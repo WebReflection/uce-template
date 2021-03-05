@@ -572,7 +572,7 @@
     }
   };
 
-  var info = null,
+  var info$1 = null,
       schedule = new Set();
 
   var invoke = function invoke(effect) {
@@ -619,7 +619,7 @@
     });
   };
   var getInfo = function getInfo() {
-    return info;
+    return info$1;
   };
   var hasEffect = function hasEffect(hook) {
     return fx.has(hook);
@@ -639,14 +639,14 @@
     return hook;
 
     function hook() {
-      var prev = info;
-      info = current;
+      var prev = info$1;
+      info$1 = current;
       current.e = current.i = 0;
 
       try {
         return callback.apply(current.c = this, current.a = arguments);
       } finally {
-        info = prev;
+        info$1 = prev;
         if (effects.length) wait.then(effects.forEach.bind(effects.splice(0), invoke));
         if (layoutEffects.length) layoutEffects.splice(0).forEach(invoke);
       }
@@ -835,7 +835,7 @@
     if (typeof Proxy === "function") return true;
 
     try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
       return true;
     } catch (e) {
       return false;
@@ -895,13 +895,13 @@
 
   var attr = /([^\s\\>"'=]+)\s*=\s*(['"]?)$/;
   var empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
-  var node$1 = /<[a-z][^>]+$/i;
+  var node = /<[a-z][^>]+$/i;
   var notNode = />[^<>]*$/;
   var selfClosing = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/>)/ig;
   var trimEnd = /\s+$/;
 
   var isNode = function isNode(template, i) {
-    return 0 < i-- && (node$1.test(template[i]) || !notNode.test(template[i]) && isNode(template, i));
+    return 0 < i-- && (node.test(template[i]) || !notNode.test(template[i]) && isNode(template, i));
   };
 
   var regular = function regular(original, name, extra) {
@@ -1187,8 +1187,12 @@
     };
   };
   var ref = function ref(node) {
+    var oldValue;
     return function (value) {
-      if (typeof value === 'function') value(node);else value.current = node;
+      if (oldValue !== value) {
+        oldValue = value;
+        if (typeof value === 'function') value(node);else value.current = node;
+      }
     };
   };
   var setter = function setter(node, key) {
@@ -1339,14 +1343,11 @@
         case 'boolean':
           if (oldValue !== newValue) {
             oldValue = newValue;
-            if (text) text.nodeValue = newValue;else text = document.createTextNode(newValue);
+            if (!text) text = document.createTextNode('');
+            text.data = newValue;
             nodes = diff(comment, nodes, [text]);
           }
 
-          break;
-
-        case 'function':
-          anyContent(newValue(node));
           break;
         // null, and undefined are used to cleanup previous content
 
@@ -1381,6 +1382,11 @@
             nodes = diff(comment, nodes, newValue.nodeType === 11 ? slice.call(newValue.childNodes) : [newValue]);
           }
 
+          break;
+
+        case 'function':
+          anyContent(newValue(comment));
+          break;
       }
     };
 
@@ -1448,7 +1454,7 @@
   // content, within the exact same amount of updates each time.
   // This cache relates each template to its unique content and updates.
 
-  var cache = umap(new WeakMap()); // a RegExp that helps checking nodes that cannot contain comments
+  var cache$2 = umap(new WeakMap()); // a RegExp that helps checking nodes that cannot contain comments
 
   var textOnly = /^(?:plaintext|script|style|textarea|title|xmp)$/i;
   var createCache = function createCache() {
@@ -1511,7 +1517,7 @@
       if (node.nodeType === 8) {
         // The only comments to be considered are those
         // which content is exactly the same as the searched one.
-        if (node.nodeValue === search) {
+        if (node.data === search) {
           nodes.push({
             type: 'node',
             path: createPath(node)
@@ -1561,7 +1567,7 @@
 
 
   var mapUpdates = function mapUpdates(type, template) {
-    var _ref = cache.get(template) || cache.set(template, mapTemplate(type, template)),
+    var _ref = cache$2.get(template) || cache$2.set(template, mapTemplate(type, template)),
         content = _ref.content,
         nodes = _ref.nodes; // clone deeply the fragment
 
@@ -1646,8 +1652,8 @@
     this.values = values;
   }
 
-  var create = Object.create,
-      defineProperties = Object.defineProperties; // both `html` and `svg` template literal tags are polluted
+  var create$2 = Object.create,
+      defineProperties$2 = Object.defineProperties; // both `html` and `svg` template literal tags are polluted
   // with a `for(ref[, id])` and a `node` tag too
 
   var tag = function tag(type) {
@@ -1669,7 +1675,7 @@
       };
     };
 
-    return defineProperties( // non keyed operations are recognized as instance of Hole
+    return defineProperties$2( // non keyed operations are recognized as instance of Hole
     // during the "unroll", recursively resolved and updated
     function (template) {
       for (var _len2 = arguments.length, values = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
@@ -1684,7 +1690,7 @@
         // related node, handy with JSON results and mutable list of objects
         // that usually carry a unique identifier
         value: function value(ref, id) {
-          var memo = keyed.get(ref) || keyed.set(ref, create(null));
+          var memo = keyed.get(ref) || keyed.set(ref, create$2(null));
           return memo[id] || (memo[id] = fixed(createCache()));
         }
       },
@@ -1744,7 +1750,7 @@
   }
 
   var defineProperties$1 = Object.defineProperties,
-      keys = Object.keys;
+      keys$2 = Object.keys;
 
   var accessor = function accessor(all, shallow, hook, value, update) {
     return {
@@ -1763,10 +1769,10 @@
 
   var loop = function loop(props, get, all, shallow, useState, update) {
     var desc = {};
-    var hook = useState !== noop;
+    var hook = useState !== noop$1;
     var args = [all, shallow, hook];
 
-    for (var ke = keys(props), y = 0; y < ke.length; y++) {
+    for (var ke = keys$2(props), y = 0; y < ke.length; y++) {
       var value = get(props, ke[y]);
       var extras = hook ? useState(value) : [value, useState];
       if (update) extras[1] = update;
@@ -1776,7 +1782,7 @@
     return desc;
   };
 
-  var noop = function noop() {};
+  var noop$1 = function noop() {};
 
   var dom = (function () {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -1785,7 +1791,7 @@
         _ref$shallow = _ref.shallow,
         shallow = _ref$shallow === void 0 ? true : _ref$shallow,
         _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState,
+        useState = _ref$useState === void 0 ? noop$1 : _ref$useState,
         _ref$getAttribute = _ref.getAttribute,
         getAttribute = _ref$getAttribute === void 0 ? function (element, key) {
       return element.getAttribute(key);
@@ -1818,7 +1824,7 @@
   var CE = customElements;
   var defineCustomElement = CE.define;
   var create$1 = Object.create,
-      defineProperties$2 = Object.defineProperties,
+      defineProperties = Object.defineProperties,
       getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
       keys$1 = Object.keys;
   var element = 'element';
@@ -1831,7 +1837,7 @@
     return document.createElement(name);
   };
 
-  var info$1 = function info(e) {
+  var info = function info(e) {
     return constructors.get(e) || constructors.set(e, {
       c: el(e).constructor,
       e: e
@@ -1859,7 +1865,7 @@
     var bootstrap = function bootstrap(element, key, value) {
       if (!initialized.has(element)) {
         initialized.set(element, 0);
-        defineProperties$2(element, {
+        defineProperties(element, {
           html: {
             configurable: true,
             value: content.bind(attachShadow ? element.attachShadow(attachShadow) : element)
@@ -1978,7 +1984,7 @@
       value: disconnected
     };
 
-    var _info = info$1(definition["extends"] || element),
+    var _info = info(definition["extends"] || element),
         c = _info.c,
         e = _info.e;
 
@@ -1995,8 +2001,8 @@
 
       return MicroElement;
     }(c);
-    defineProperties$2(MicroElement, statics);
-    defineProperties$2(MicroElement.prototype, proto);
+    defineProperties(MicroElement, statics);
+    defineProperties(MicroElement.prototype, proto);
     var args = [tagName, MicroElement];
     if (e !== element) args.push({
       "extends": e
@@ -2054,7 +2060,7 @@
       }]);
 
       return _class;
-    }(info$1(element).c));
+    }(info(element).c));
 
   function bind(method) {
     this[method] = this[method].bind(this);
@@ -2075,7 +2081,7 @@
         _ref$shallow = _ref.shallow,
         shallow = _ref$shallow === void 0 ? true : _ref$shallow,
         _ref$useState = _ref.useState,
-        useState = _ref$useState === void 0 ? noop : _ref$useState;
+        useState = _ref$useState === void 0 ? noop$1 : _ref$useState;
 
     return function (props, update) {
       return defineProperties$1({}, loop(props, value, all, shallow, useState, update));
@@ -2211,17 +2217,17 @@
       }
     });
   };
-  var create$2 = Object.create,
+  var create = Object.create,
       defineProperty = Object.defineProperty,
-      keys$2 = Object.keys;
+      keys = Object.keys;
   var lazyModules = [];
   var strict = '"use strict;"\n';
 
   var $require = function $require(module) {
-    return cache$2[module];
+    return cache[module];
   };
 
-  var cache$2 = create$2(null);
+  var cache = create(null);
   var waiting = {};
   var asCJS = function asCJS(esm, require) {
     var exports = [];
@@ -2245,21 +2251,21 @@
 
     if (require) {
       imports.forEach(function (key) {
-        if (!(key in cache$2)) {
+        if (!(key in cache)) {
           lazyModules.push(new Lie(function ($) {
             var module = waiting;
 
             if (/^(?:[./]|https?:)/.test(key)) {
-              cache$2[key] = module;
+              cache[key] = module;
               var xhr = new XMLHttpRequest();
               xhr.open('get', key, true);
               xhr.send(null);
 
               xhr.onload = function () {
-                $(cache$2[key] = loader(xhr.responseText));
+                $(cache[key] = loader(xhr.responseText));
               };
             } else {
-              defineProperty(cache$2, key, {
+              defineProperty(cache, key, {
                 get: function get() {
                   return module;
                 },
@@ -2281,7 +2287,7 @@
     return cjs;
   };
   var cjs = function cjs(extras) {
-    var args = keys$2(extras || {});
+    var args = keys(extras || {});
     var values = args.map(function (k) {
       return extras[k];
     }).concat($require);
@@ -2295,7 +2301,7 @@
       var fn = Function.apply(null, params);
       fn.apply(null, values.concat(module, exports));
       var result = module.exports;
-      var k = keys$2(result);
+      var k = keys(result);
       return k.length === 1 && k[0] === 'default' ? result["default"] : result;
     };
   };
@@ -2347,8 +2353,8 @@
       drop = _QSAO.drop,
       parseQSAO = _QSAO.parse;
   var resolve = function resolve(name, module) {
-    if (name in cache$2 && cache$2[name] !== waiting) console.warn('duplicated ' + name);
-    cache$2[name] = module;
+    if (name in cache && cache[name] !== waiting) console.warn('duplicated ' + name);
+    cache[name] = module;
   };
   var parse = function parse(parts) {
     var template = new Template();
@@ -2358,7 +2364,7 @@
   var toBeDefined = new Map();
   var wrapSetup = ['module.exports=function(module,exports){"use strict";', '}'];
 
-  var noop$1 = function noop() {};
+  var noop = function noop() {};
 
   var badTemplate = function badTemplate() {
     throw new Error('bad template');
@@ -2465,7 +2471,7 @@
           var self = this;
           var html = self.html;
           var init = true;
-          var update = noop$1;
+          var update = noop;
           var render = hooked(function () {
             if (init) {
               init = !init;
