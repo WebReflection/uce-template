@@ -1,6 +1,7 @@
 'use strict';
 require('@ungap/custom-elements');
 const Lie = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('@webreflection/lie'));
+const {get, has, ref, slot} = require('uce-helpers');
 
 const {
   hooked,
@@ -70,8 +71,6 @@ const badTemplate = () => {
   throw new Error('bad template');
 };
 
-const get = (child, name) => child.getAttribute(name);
-const has = (child, name) => child.hasAttribute(name);
 
 const lazySetup = (fn, self, props, exports) => {
   const module = {exports};
@@ -83,32 +82,11 @@ const lazySetup = (fn, self, props, exports) => {
   return out;
 };
 
-const queryHelper = (attr, arr) => element => {
-  return [].reduce.call(
-    element.querySelectorAll('[' + attr + ']'),
-    (slot, node) => {
-      let {parentNode} = node;
-      do {
-        if (parentNode === element) {
-          const name = get(node, attr);
-          slot[name] = arr ? [].concat(slot[name] || [], node) : node;
-          break;
-        }
-        else if (/-/.test(parentNode.tagName) || get(parentNode, 'is'))
-          break;
-      } while (parentNode = parentNode.parentNode);
-      return slot;
-    },
-    {}
-  );
-};
-
 // preloaded imports
 const virtualNameSpace = {
   define, render, html, svg, css,
   reactive: stateHandler({useState}),
-  ref: queryHelper('ref', false),
-  slot: queryHelper('slot', true)
+  ref, slot
 };
 
 // deprecated? namespace

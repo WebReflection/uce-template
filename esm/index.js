@@ -1,5 +1,6 @@
 import '@ungap/custom-elements';
 import Lie from '@webreflection/lie';
+import {get, has, ref, slot} from 'uce-helpers';
 
 import {
   hooked,
@@ -61,8 +62,6 @@ const badTemplate = () => {
   throw new Error('bad template');
 };
 
-const get = (child, name) => child.getAttribute(name);
-const has = (child, name) => child.hasAttribute(name);
 
 const lazySetup = (fn, self, props, exports) => {
   const module = {exports};
@@ -74,32 +73,11 @@ const lazySetup = (fn, self, props, exports) => {
   return out;
 };
 
-const queryHelper = (attr, arr) => element => {
-  return [].reduce.call(
-    element.querySelectorAll('[' + attr + ']'),
-    (slot, node) => {
-      let {parentNode} = node;
-      do {
-        if (parentNode === element) {
-          const name = get(node, attr);
-          slot[name] = arr ? [].concat(slot[name] || [], node) : node;
-          break;
-        }
-        else if (/-/.test(parentNode.tagName) || get(parentNode, 'is'))
-          break;
-      } while (parentNode = parentNode.parentNode);
-      return slot;
-    },
-    {}
-  );
-};
-
 // preloaded imports
 const virtualNameSpace = {
   define, render, html, svg, css,
   reactive: stateHandler({useState}),
-  ref: queryHelper('ref', false),
-  slot: queryHelper('slot', true)
+  ref, slot
 };
 
 // deprecated? namespace
